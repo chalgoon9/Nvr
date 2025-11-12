@@ -19,8 +19,17 @@ import sys
 from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
 
 
-# 페이지당 최대 크롤링 상품 수 (0이면 제한 없음)
-MAX_PRODUCTS_PER_PAGE = int(os.getenv("MAX_PRODUCTS_PER_PAGE", "0") or 0)
+# 페이지당 최대 크롤링 상품 수 (테스트 기본값 5개)
+DEFAULT_MAX_PRODUCTS_PER_PAGE = 5
+MAX_PRODUCTS_PER_PAGE = int(
+    os.getenv("MAX_PRODUCTS_PER_PAGE", str(DEFAULT_MAX_PRODUCTS_PER_PAGE)) or DEFAULT_MAX_PRODUCTS_PER_PAGE
+)
+
+# 전체 실행에서 최대 수집 상품 수 (테스트 기본값 5개)
+DEFAULT_MAX_PRODUCTS_TOTAL = DEFAULT_MAX_PRODUCTS_PER_PAGE
+MAX_PRODUCTS_TOTAL = int(
+    os.getenv("MAX_PRODUCTS_TOTAL", str(DEFAULT_MAX_PRODUCTS_TOTAL)) or DEFAULT_MAX_PRODUCTS_TOTAL
+)
 
 
 # .env 로더 (python-dotenv 미설치 시 최소 파서)
@@ -316,6 +325,7 @@ def product_list_crawl(context, df, read_excel_path, seen_urls):
         "next": ["다음", "다음 페이지", "다음페이지", ">"],
         "prev": ["이전", "이전 페이지", "이전페이지", "<"]
     }
+    reached_total_limit = False
 
     # 검증 모드: 특정 페이지의 첫 상품을 열어 기대 URL/이름 확인
     verify_target_page = None
@@ -849,6 +859,11 @@ def product_list_crawl(context, df, read_excel_path, seen_urls):
                 return
             df, _ = crawl_page(page, df, seen_urls)
             print(f"Completed page {page_number}")
+            if MAX_PRODUCTS_TOTAL and len(df) >= MAX_PRODUCTS_TOTAL:
+                df = df.iloc[:MAX_PRODUCTS_TOTAL]
+                reached_total_limit = True
+                print(f"Reached MAX_PRODUCTS_TOTAL={MAX_PRODUCTS_TOTAL}, stopping after page {page_number}.")
+                break
 
         write_to_excel(df, write_excel_path, seen_urls)
         write_to_excel2(
@@ -856,6 +871,9 @@ def product_list_crawl(context, df, read_excel_path, seen_urls):
             output_folder / f'dolce_{shopname}_{shopnumber}_{start_page}_{last_page}_second.xlsx'
         )
         print(f"Processed pages {start_page} to {last_page}")
+        if reached_total_limit:
+            print("MAX_PRODUCTS_TOTAL reached; ending crawl.")
+            break
 
     page.close()
 
@@ -1265,36 +1283,179 @@ def image_crawl(page):
     return common_urls, different_urls
 
 
+BRANDING_IMAGE_URLS = {
+    "https://axh2eqadoldy.compat.objectstorage.ap-chuncheon-1.oraclecloud.com/bucket-20230610-0005/upload/top.png",
+    "https://axh2eqadoldy.compat.objectstorage.ap-chuncheon-1.oraclecloud.com/bucket-20230610-0005/upload/bottom.png",
+    "https://coudae.s3.ap-northeast-2.amazonaws.com/A00412936/cloud/7290.png",
+}
+
+_GRAY_LINE_REPLACEMENTS = {
+    "https://rapid-up.s3.ap-northeast-2.amazonaws.com/dev/gray-line.png":
+        "https://axh2eqadoldy.compat.objectstorage.ap-chuncheon-1.oraclecloud.com/bucket-20230610-0005/upload/gray-line.png"
+}
+
+_BLOCKED_IMAGE_PREFIXES = (
+    "https://rapid-up.s3.ap-northeast-2.amazonaws.com",
+    "https://cdn.heyseller.kr",
+    "https://ai.esmplus.com/",
+)
+
+
+def log_content_debug(product_code, message):
+    print(f"[CONTENT][{product_code}] {message}")
+
+
 def content_crawl(page, product_code, element_selector):
     time.sleep(1)
     page.wait_for_load_state("load")
-    ensure_product_detail_visible(page)
 
     if not element_selector:
-        print("Invalid element selector. Moving to the next item.")
+        log_content_debug(product_code, "No element selector available.")
         return None
 
     element = page.query_selector(element_selector)
     if element is None:
-        print("No valid element found for the selector. Moving to the next item.")
+        log_content_debug(product_code, f"Selector '{element_selector}' resolved to None.")
         return None
 
-    content = element.inner_html()
-    soup = BeautifulSoup(content, 'html.parser')
+    raw_content = element.inner_html()
+    soup = BeautifulSoup(raw_content, 'html.parser')
+
+    if '계속됩니다' in soup.get_text():
+        log_content_debug(product_code, "'계속됩니다' marker detected, skipping.")
+        return None
+
+    css_link = soup.new_tag(
+        "link",
+        rel="stylesheet",
+        href="https://static-resource-smartstore.pstatic.net/smartstore/p/static/20230630180923/common.css",
+    )
+    if soup.head:
+        soup.head.append(css_link)
+    else:
+        head_tag = soup.new_tag("head")
+        head_tag.append(css_link)
+        soup.insert(0, head_tag)
+
+    for button in soup.find_all("button"):
+        button.decompose()
+
+    for img in soup.find_all("img", attrs={"data-src": True}):
+        img["src"] = img["data-src"]
+        del img["data-src"]
+
+    for img in soup.find_all("img", src="https://rapid-up.s3.ap-northeast-2.amazonaws.com/dev/gray-line.png"):
+        img["src"] = _GRAY_LINE_REPLACEMENTS["https://rapid-up.s3.ap-northeast-2.amazonaws.com/dev/gray-line.png"]
+
+    text_to_remove = "* {text-align: center;}  #mycontents11 img{max-width: 100%;}"
+    if text_to_remove in soup.get_text():
+        soup = BeautifulSoup(str(soup).replace(text_to_remove, ""), "html.parser")
+        log_content_debug(product_code, "Removed inline text-align styles.")
+
+    disallowed_attrs = ["area-hidden", "data-linkdata", "data-linktype", "onclick", "style", "class"]
+    for attr in disallowed_attrs:
+        for tag in soup.find_all(attrs={attr: True}):
+            del tag[attr]
+
+    for anchor in soup.find_all("a", attrs={"data-linkdata": True}):
+        img = anchor.find("img")
+        if not img:
+            continue
+        src = img.get("src", "")
+        data_src = img.get("data-src", "")
+        if not src:
+            src = data_src
+            img["src"] = src
+        if "data-src" in img.attrs:
+            del img["data-src"]
+
+    for img in soup.find_all("img"):
+        src = img.get("src", "")
+        if any(src.startswith(prefix) for prefix in _BLOCKED_IMAGE_PREFIXES):
+            img.decompose()
+
+    remaining_img_count = len(soup.find_all('img'))
+    log_content_debug(product_code, f"Images after cleanup: {remaining_img_count}")
+
+    soup = insert_and_remove_images(soup)
+
+    for img_tag in soup.find_all("img"):
+        img_tag["style"] = "display: block; margin-left: auto; margin-right: auto; margin-bottom: 10px;"
+
+    for h1 in soup.find_all("h1"):
+        h1["style"] = "text-align: center; font-size: 30px; margin-bottom: 20px;"
+
+    text_elements = ["p", "div", "span", "li", "a"]
+    for tag_name in text_elements:
+        for node in soup.find_all(tag_name):
+            existing_style = node.get("style", "")
+            new_style = f"{existing_style}; text-align: center; font-size: 18px; margin-bottom: 30px;"
+            node["style"] = new_style.strip()
+
+    cleaned_html = str(soup).strip()
+
+    meaningful_imgs = [
+        img for img in soup.find_all("img")
+        if (img.get("src") or "").strip() and (img.get("src").strip() not in BRANDING_IMAGE_URLS)
+    ]
+    has_text = bool(soup.get_text(strip=True))
+    if not has_text and not meaningful_imgs:
+        log_content_debug(product_code, "Content empty after cleanup; applying fallback gallery extraction.")
+        fallback = build_image_gallery(raw_content, product_code)
+        if fallback is not None:
+            log_content_debug(product_code, "Fallback gallery extraction succeeded.")
+            return fallback
+        log_content_debug(product_code, "Fallback gallery extraction failed; returning None.")
+        return None
+
+    log_content_debug(product_code, "Returning cleaned HTML content.")
+    return pd.DataFrame({"Content": [cleaned_html]})
+
+
+def insert_and_remove_images(soup):
+    img_srcs_to_insert = [
+        "https://axh2eqadoldy.compat.objectstorage.ap-chuncheon-1.oraclecloud.com/bucket-20230610-0005/upload/top.png",
+        "https://axh2eqadoldy.compat.objectstorage.ap-chuncheon-1.oraclecloud.com/bucket-20230610-0005/upload/bottom.png",
+        "https://coudae.s3.ap-northeast-2.amazonaws.com/A00412936/cloud/7290.png",
+    ]
+
+    img_tag_top = soup.new_tag(
+        "img", src=img_srcs_to_insert[0], style="display: block; margin-left: auto; margin-right: auto;"
+    )
+    img_tag_middle = soup.new_tag(
+        "img", src=img_srcs_to_insert[2], style="display: block; margin-left: auto; margin-right: auto;"
+    )
+    img_tag_bottom = soup.new_tag(
+        "img", src=img_srcs_to_insert[1], style="display: block; margin-left: auto; margin-right: auto;"
+    )
+
+    try:
+        first_tag = next(soup.children)
+        last_tag = next(reversed(soup.contents))
+    except StopIteration:
+        return soup
+
+    first_tag.insert_before(img_tag_top)
+    last_tag.insert_after(img_tag_bottom)
+
+    img_srcs_to_remove = ["", ""]
+    for img_src in img_srcs_to_remove:
+        for img in soup.find_all("img", attrs={"src": img_src}):
+            img.decompose()
+
+    return soup
+
+
+def build_image_gallery(raw_html, product_code="UNKNOWN"):
+    if not raw_html:
+        log_content_debug(product_code, "build_image_gallery received empty raw_html.")
+        return None
+
+    soup = BeautifulSoup(raw_html, 'html.parser')
 
     for img in soup.find_all('img', attrs={'data-src': True}):
         img['src'] = img['data-src']
         del img['data-src']
-
-    replacements = {
-        "https://rapid-up.s3.ap-northeast-2.amazonaws.com/dev/gray-line.png":
-            "https://axh2eqadoldy.compat.objectstorage.ap-chuncheon-1.oraclecloud.com/bucket-20230610-0005/upload/gray-line.png"
-    }
-    blocked_prefixes = (
-        "https://rapid-up.s3.ap-northeast-2.amazonaws.com",
-        "https://cdn.heyseller.kr",
-        "https://ai.esmplus.com/",
-    )
 
     filtered = BeautifulSoup('', 'html.parser')
     container = filtered.new_tag('div')
@@ -1305,8 +1466,10 @@ def content_crawl(page, product_code, element_selector):
         src = (img.get('src') or '').strip()
         if not src:
             continue
-        src = replacements.get(src, src)
-        if any(src.startswith(prefix) for prefix in blocked_prefixes):
+        src = _GRAY_LINE_REPLACEMENTS.get(src, src)
+        if any(src.startswith(prefix) for prefix in _BLOCKED_IMAGE_PREFIXES):
+            continue
+        if src in BRANDING_IMAGE_URLS:
             continue
         if src in seen:
             continue
@@ -1316,9 +1479,10 @@ def content_crawl(page, product_code, element_selector):
         container.append(clean_img)
 
     if not container.find_all('img'):
-        print("No images captured in content block.")
+        log_content_debug(product_code, "Fallback gallery extraction produced no images.")
         return None
 
+    log_content_debug(product_code, "Fallback gallery extraction produced image-only content.")
     return pd.DataFrame({'Content': [str(filtered)]})
 
 
@@ -1468,7 +1632,10 @@ def get_product_data(page, product, i, num_products):
     price_int = to_int(price)
     total_price = price_int + shipping_fee_int
 
-    if isinstance(content, str):
+    if content is None:
+        log_content_debug(product_code, "content_crawl returned None; storing empty placeholder.")
+        content_df = pd.DataFrame({'Content': [""]})
+    elif isinstance(content, str):
         content_df = pd.DataFrame({'Content': [content]})
     else:
         content_df = content
@@ -1681,7 +1848,19 @@ with sync_playwright() as p:
     if browser_name == "chromium" and STEALTH_HELPER:
         STEALTH_HELPER.apply_stealth_sync(context)
 
-    df = pd.DataFrame(columns=['Product', 'Price', 'Product_URL'])
+    df_columns = [
+        'Naver_Category_Number',
+        'Product',
+        'Price',
+        'Shipping_Fee',
+        'Total_Price',
+        'Options',
+        'Main_Image',
+        'Other_Images',
+        'Content',
+        'Product_URL',
+    ]
+    df = pd.DataFrame(columns=df_columns)
     output_folder = SCRIPT_DIR / 'output'
     read_excel_path = output_folder / 'ExcelSaveTemplate_230109.xlsx'
     seen_urls = set()

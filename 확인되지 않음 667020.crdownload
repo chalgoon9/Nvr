@@ -177,84 +177,6 @@ def extract_price_from_text(raw_text):
         return "N/A"
 
 
-def has_numeric_chars(value):
-    if value is None:
-        return False
-    return bool(re.search(r"\d", str(value)))
-
-
-def normalize_price_value(value):
-    if value in (None, "", "N/A"):
-        return None
-    if isinstance(value, (int, float)):
-        if value <= 0:
-            return None
-        return int(value)
-    digits = re.sub(r"[^\d]", "", str(value))
-    if not digits:
-        return None
-    try:
-        numeric = int(digits)
-    except ValueError:
-        return None
-    return numeric if numeric > 0 else None
-
-
-def price_from_option_data(option_data):
-    if not option_data:
-        return None
-    candidates = []
-    for data in option_data.values():
-        prices = data.get('하위옵션가격') if isinstance(data, dict) else None
-        if not prices:
-            continue
-        for raw in prices:
-            normalized = normalize_price_value(raw)
-            if normalized:
-                candidates.append(normalized)
-    if not candidates:
-        return None
-    return min(candidates)
-
-
-_PRELOADED_PRICE_SCRIPT = """
-() => {
-    const state = window.__PRELOADED_STATE__;
-    if (!state || !state.productSimpleView || !state.productSimpleView.product) {
-        return null;
-    }
-    const product = state.productSimpleView.product;
-    const wrap = (value) => {
-        const type = typeof value;
-        if (type === "number" || type === "string") {
-            return value;
-        }
-        return null;
-    };
-    return {
-        salePrice: wrap(product.salePrice),
-        discountedSalePrice: wrap(product.discountedSalePrice),
-        price: wrap(product.price)
-    };
-}
-"""
-
-
-def price_from_preloaded_state(page):
-    try:
-        price_info = page.evaluate(_PRELOADED_PRICE_SCRIPT)
-    except Exception as exc:
-        print(f"Failed to read PRELOADED_STATE price: {exc}")
-        return None
-    if not price_info:
-        return None
-    for key in ("salePrice", "discountedSalePrice", "price"):
-        normalized = normalize_price_value(price_info.get(key))
-        if normalized:
-            return normalized
-    return None
-
-
 def update_query_params(url, **params):
     parts = urlsplit(url)
     query = dict(parse_qsl(parts.query, keep_blank_values=True))
@@ -290,14 +212,14 @@ def product_list_crawl(context, df, read_excel_path, seen_urls):
     if browser_name == "chromium" and STEALTH_HELPER:
         STEALTH_HELPER.apply_stealth_sync(page)
 
-    raw_url = 'https://smartstore.naver.com/joypapa_/category/ALL?st=RECENT&dt=BIG_IMAGE&size=20'
+    raw_url = 'https://smartstore.naver.com/joypapa_/category/ALL?st=RECENT&dt=BIG_IMAGE&size=80'
     original_url = update_query_params(raw_url, page=None)
     page.goto(original_url)
     page.wait_for_load_state("load")
     page.wait_for_load_state("networkidle")
 
-    global_start_page = 61
-    global_last_page = 61
+    global_start_page = 51
+    global_last_page = 59
     # 디버그: 특정 페이지만 요청된 경우 범위를 해당 값으로 축소
     if CRAWL_ONLY_PAGES:
         try:
@@ -860,77 +782,8 @@ def product_list_crawl(context, df, read_excel_path, seen_urls):
     page.close()
 
 
-def ensure_product_detail_visible(page):
-    """Ensure the SmartStore 상세정보 영역 is expanded so selectors become available."""
-    toggle_selectors = [
-        "button[data-resize-on-click='true']",
-        "button:has-text('상세정보 펼치기')",
-        "button:has-text('상세정보 더보기')",
-    ]
-    for selector in toggle_selectors:
-        try:
-            toggle = page.query_selector(selector)
-        except Exception:
-            toggle = None
-        if not toggle:
-            continue
-        try:
-            aria_expanded = (toggle.get_attribute("aria-expanded") or "").lower()
-        except Exception:
-            aria_expanded = ""
-        try:
-            label = (toggle.inner_text() or "").strip()
-        except Exception:
-            label = ""
-        need_expand = (
-            aria_expanded == "false"
-            or ("펼치기" in label and "접기" not in label)
-            or ("더보기" in label and "접기" not in label)
-        )
-        if need_expand:
-            try:
-                toggle.scroll_into_view_if_needed()
-            except Exception:
-                pass
-            toggle.click()
-            page.wait_for_load_state("networkidle")
-            page.wait_for_timeout(500)
-        break
-    for _ in range(4):
-        try:
-            section = page.query_selector("#INTRODUCE")
-        except Exception:
-            section = None
-        if section:
-            try:
-                section.scroll_into_view_if_needed()
-            except Exception:
-                try:
-                    page.evaluate("document.getElementById('INTRODUCE')?.scrollIntoView({behavior: 'instant', block: 'start'})")
-                except Exception:
-                    pass
-            try:
-                section.wait_for_element_state("visible", timeout=2000)
-            except Exception:
-                pass
-            break
-        try:
-            page.mouse.wheel(0, 1200)
-        except Exception:
-            try:
-                page.evaluate("window.scrollBy(0, document.body.scrollHeight / 3)")
-            except Exception:
-                pass
-        page.wait_for_timeout(500)
-    try:
-        page.wait_for_selector("#INTRODUCE", timeout=5000)
-    except Exception:
-        pass
-
-
 def find_content_element(page, product_code):
     time.sleep(1)
-    ensure_product_detail_visible(page)
 
     content_selectors = [
         '#INTRODUCE .detail_viewer',
@@ -1268,7 +1121,6 @@ def image_crawl(page):
 def content_crawl(page, product_code, element_selector):
     time.sleep(1)
     page.wait_for_load_state("load")
-    ensure_product_detail_visible(page)
 
     if not element_selector:
         print("Invalid element selector. Moving to the next item.")
@@ -1282,44 +1134,102 @@ def content_crawl(page, product_code, element_selector):
     content = element.inner_html()
     soup = BeautifulSoup(content, 'html.parser')
 
+    if '계속됩니다' in soup.get_text():
+        print("found 계속됩니다")
+        return None
+
+    css_link = soup.new_tag("link", rel="stylesheet",
+                            href="https://static-resource-smartstore.pstatic.net/smartstore/p/static/20230630180923/common.css")
+    if soup.head:
+        soup.head.append(css_link)
+    else:
+        head_tag = soup.new_tag("head")
+        head_tag.append(css_link)
+        soup.insert(0, head_tag)
+
+    for button in soup.find_all('button'):
+        button.decompose()
+
     for img in soup.find_all('img', attrs={'data-src': True}):
         img['src'] = img['data-src']
         del img['data-src']
 
-    replacements = {
-        "https://rapid-up.s3.ap-northeast-2.amazonaws.com/dev/gray-line.png":
-            "https://axh2eqadoldy.compat.objectstorage.ap-chuncheon-1.oraclecloud.com/bucket-20230610-0005/upload/gray-line.png"
-    }
-    blocked_prefixes = (
-        "https://rapid-up.s3.ap-northeast-2.amazonaws.com",
-        "https://cdn.heyseller.kr",
-        "https://ai.esmplus.com/",
-    )
+    target_url = "https://rapid-up.s3.ap-northeast-2.amazonaws.com/dev/gray-line.png"
+    new_url = "https://axh2eqadoldy.compat.objectstorage.ap-chuncheon-1.oraclecloud.com/bucket-20230610-0005/upload/gray-line.png"
+    for img in soup.find_all('img', src=target_url):
+        img['src'] = new_url
 
-    filtered = BeautifulSoup('', 'html.parser')
-    container = filtered.new_tag('div')
-    filtered.append(container)
+    text_to_remove = '* {text-align: center;}  #mycontents11 img{max-width: 100%;}'
+    if text_to_remove in soup.get_text():
+        soup = BeautifulSoup(str(soup).replace(text_to_remove, ''), 'html.parser')
 
-    seen = set()
+    disallowed_attrs = ['area-hidden', 'data-linkdata', 'data-linktype', 'onclick', 'style', 'class']
+    for attr in disallowed_attrs:
+        for tag in soup.find_all(attrs={attr: True}):
+            del tag[attr]
+
+    for a in soup.find_all('a', attrs={'data-linkdata': True}):
+        img = a.find('img')
+        if img:
+            src = img.get('src', '')
+            data_src = img.get('data-src', '')
+            if not src:
+                src = data_src
+                img['src'] = src
+                if 'data-src' in img.attrs:
+                    del img['data-src']
+
     for img in soup.find_all('img'):
-        src = (img.get('src') or '').strip()
-        if not src:
-            continue
-        src = replacements.get(src, src)
-        if any(src.startswith(prefix) for prefix in blocked_prefixes):
-            continue
-        if src in seen:
-            continue
-        seen.add(src)
-        clean_img = filtered.new_tag('img', src=src)
-        clean_img['style'] = 'display:block;margin:0 auto 10px auto;'
-        container.append(clean_img)
+        src = img.get('src', '')
+        if src.startswith(('https://rapid-up.s3.ap-northeast-2.amazonaws.com', 'https://cdn.heyseller.kr', 'https://ai.esmplus.com/')):
+            img.decompose()
 
-    if not container.find_all('img'):
-        print("No images captured in content block.")
-        return None
+    print(f"Number of images after all removals: {len(soup.find_all('img'))}")
 
-    return pd.DataFrame({'Content': [str(filtered)]})
+    soup = insert_and_remove_images(soup)
+
+    for img_tag in soup.find_all('img'):
+        img_tag['style'] = 'display: block; margin-left: auto; margin-right: auto; margin-bottom: 10px;'
+
+    for h1 in soup.find_all('h1'):
+        h1['style'] = 'text-align: center; font-size: 30px; margin-bottom: 20px;'
+
+    text_elements = ['p', 'div', 'span', 'li', 'a']
+    for tag_name in text_elements:
+        for element in soup.find_all(tag_name):
+            existing_style = element.get('style', '')
+            new_style = f"{existing_style}; text-align: center; font-size: 18px; margin-bottom: 30px;"
+            element['style'] = new_style.strip()
+
+    return pd.DataFrame({'Content': [str(soup)]})
+
+
+def insert_and_remove_images(soup):
+    img_srcs_to_insert = ['https://axh2eqadoldy.compat.objectstorage.ap-chuncheon-1.oraclecloud.com/bucket-20230610-0005/upload/top.png',
+                          'https://axh2eqadoldy.compat.objectstorage.ap-chuncheon-1.oraclecloud.com/bucket-20230610-0005/upload/bottom.png',
+                          'https://coudae.s3.ap-northeast-2.amazonaws.com/A00412936/cloud/7290.png']
+
+    img_tag_top = soup.new_tag('img', src=img_srcs_to_insert[0],
+                               style="display: block; margin-left: auto; margin-right: auto;")
+    img_tag_middle = soup.new_tag('img', src=img_srcs_to_insert[2],
+                                  style="display: block; margin-left: auto; margin-right: auto;")
+    img_tag_bottom = soup.new_tag('img', src=img_srcs_to_insert[1],
+                                  style="display: block; margin-left: auto; margin-right: auto;")
+
+    first_tag = next(soup.children)
+    last_tag = next(reversed(soup.contents))
+
+    first_tag.insert_before(img_tag_top)
+    last_tag.insert_after(img_tag_bottom)
+
+    img_srcs_to_remove = ['', '']
+
+    for img_src in img_srcs_to_remove:
+        img_to_remove = soup.find_all('img', attrs={'src': img_src})
+        for img in img_to_remove:
+            img.decompose()
+
+    return soup
 
 
 def return_shipping_fee(total_price):
@@ -1407,26 +1317,6 @@ def get_product_data(page, product, i, num_products):
 
     options = option_crawl(product_page)
     print("Options:", options)
-
-    if not has_numeric_chars(price):
-        state_price = price_from_preloaded_state(product_page)
-        option_price = price_from_option_data(options)
-        resolved_price = None
-        source = None
-        if state_price:
-            resolved_price = state_price
-            source = "preloaded_state"
-        elif option_price:
-            resolved_price = option_price
-            source = "option_list"
-
-        if resolved_price:
-            price = f"{resolved_price:,}"
-            print(f"Price fallback via {source}: {price}")
-        else:
-            print(f"가격 정보를 찾지 못해 상품을 건너뜁니다: {product_url}")
-            product_page.close()
-            return None
 
     common_urls, different_urls = image_crawl(product_page)
     print(f"common_urls: {common_urls}")

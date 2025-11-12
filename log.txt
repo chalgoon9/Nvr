@@ -1,4 +1,123 @@
-[2025-11-12 14:50:18] PLAYWRIGHT START
-[2025-11-12 14:50:18] DEBUG_DIR: debug
-[2025-11-12 14:50:18] Launching chromium headless=False slow_mo=0
-[2025-11-12 14:50:18] Context creation failed: name 'start_tracing' is not defined
+페이지 61 이동을 위해 next 버튼 클릭 시도 (현재 1).
+페이지 61 이동을 위해 next 버튼 클릭 시도 (현재 11).
+페이지 61 이동을 위해 next 버튼 클릭 시도 (현재 21).
+페이지 61 이동을 위해 next 버튼 클릭 시도 (현재 31).
+페이지 61 이동을 위해 next 버튼 클릭 시도 (현재 41).
+페이지 61 이동을 위해 next 버튼 클릭 시도 (현재 51).
+페이지 61에 이미 위치해 있습니다.
+페이지 61에 이미 위치해 있습니다.
+Selector 'li:has(a[href*='/products/'])' matched 20 elements.
+Product 1/20: 치공기 치아 조각 연마 기계 보석 폴리셔 소형 치공, N/A won, https://smartstore.naver.com/joypapa_/products/9956000679
+Category: 생활/건강>공구>절삭공구>각도/고속절단기
+Smallest Category('tiny') : 각도/고속절단기, Naver category number: 50003418
+옵션2 클릭 실패
+Options: {'옵션1': {'하위옵션제목': ['업그레이드된150와트호스트+2.35핸들페달없음', '업그레이드된150와트호스트+2.35핸들페달없음', '업그레이드된150와트호스트+2.35핸들+페달', '업그레이드된150와트호스트+2.35핸들+페달', '150와트호스트+범용핸들(페달은포함되지않음)', '150와트호스트+범용핸들(페달은포함되지않음)', '업그레이드된150와트호스트+범용핸들+페달', '업그레이드된150와트호스트+범용핸들+페달', '150와트+옥조각패키지로업그레이드', '150와트+옥조각패키지로업그레이드', '150와트+핵조각패키지로업그레이드', '150와트+핵조각패키지로업그레이드', '150와트+나무조각패키지로업그레이드', '150와트+나무조각패키지로업그레이드'], '하위옵션가격': [0, 0, 16000, 16000, 12800, 12800, 19100, 19100, 35700, 35700, 35700, 35700, 41500, 41500]}}
+Price fallback via option_list: 12,800
+Selector 'img[alt='대표이미지']' matched 2 elements.
+Selector 'img[alt^='추가이미지']' matched 2 elements.
+common_urls: ['https://shop-phinf.pstatic.net/20240215_91/1708008090579szUzl_JPEG/4264241453364640_45985774.jpg']
+other_images: []
+Main image: https://shop-phinf.pstatic.net/20240215_91/1708008090579szUzl_JPEG/4264241453364640_45985774.jpg
+Other images: []
+URLs not starting with most common three digits:
+https://shop-phinf.pstatic.net/20240215_23/17080080908117Kvks_JPEG/260900090342195_265343861.jpg
+Using content selector '#INTRODUCE .detail_viewer' for 9956000679
+[CONTENT][9956000679] '계속됩니다' marker detected, skipping.
+Current page URL: https://smartstore.naver.com/joypapa_/products/9956000679
+배송비: 50000
+[CONTENT][9956000679] content_crawl returned None; storing empty placeholder.
+Product 2/20: 신생아 아기 인체모형 CPR 심폐소생술 병원 실습 연습, N/A won, https://smartstore.naver.com/joypapa_/products/9956000033
+Category: 생활/건강>수집품>모형/프라모델/피규어>모형
+Smallest Category('tiny') : 모형, Naver category number: 50004136
+옵션2 클릭 실패
+Options: {'옵션1': {'하위옵션제목': ['유아 기관 삽관 시뮬레이터', '유아 기관 삽관 시뮬레이터', '유아 CPR 시뮬레이터(천 가방 포함)', '유아 CPR 시뮬레이터(천 가방 포함)'], '하위옵션가격': [0, 0, 94800, 94800]}}
+Price fallback via option_list: 94,800
+Selector 'img[alt='대표이미지']' matched 2 elements.
+Selector 'img[alt^='추가이미지']' matched 5 elements.
+common_urls: ['https://shop-phinf.pstatic.net/20240215_242/17080080817490zbII_JPEG/912077969205877_873476442.jpg', 'https://shop-phinf.pstatic.net/20240215_25/1708008082175junyx_JPEG/912078395040987_2050829699.jpg']
+other_images: ['https://shop-phinf.pstatic.net/20240215_25/1708008082175junyx_JPEG/912078395040987_2050829699.jpg']
+Main image: https://shop-phinf.pstatic.net/20240215_242/17080080817490zbII_JPEG/912077969205877_873476442.jpg
+Other images: ['https://shop-phinf.pstatic.net/20240215_25/1708008082175junyx_JPEG/912078395040987_2050829699.jpg']
+URLs not starting with most common three digits:
+https://shop-phinf.pstatic.net/20240215_284/1708008081263P1UWH_JPEG/35816039238814189_1383881282.jpg
+https://shop-phinf.pstatic.net/20240215_101/1708008081447dJMv7_JPEG/260890726705786_191253551.jpg
+https://shop-phinf.pstatic.net/20240215_52/1708008082410e7qdV_JPEG/11312978828604052_1043138725.jpg
+Using content selector '#INTRODUCE .detail_viewer' for 9956000033
+[CONTENT][9956000033] Images after cleanup: 16
+[CONTENT][9956000033] Returning cleaned HTML content.
+Current page URL: https://smartstore.naver.com/joypapa_/products/9956000033
+배송비: 50000
+Product 3/20: 치과헤드라이트 구강 수술 전조등 안과 돋보기 의료, N/A won, https://smartstore.naver.com/joypapa_/products/9955999781
+Category: 출산/육아>구강청결용품>기타구강청결용품
+Smallest Category('small') : 기타구강청결용품, Naver category number: 50000625
+옵션2 클릭 실패
+Options: {'옵션1': {'하위옵션제목': ['2.5배흰색', '2.5배흰색', '3.5배더하얗게', '3.5배더하얗게', '2.5배검정', '2.5배검정', '3.5배검정', '3.5배검정', '2.5배흰색새스타일', '2.5배흰색새스타일', '2.5배검은색새스타일', '2.5배검은색새스타일', '3.5배흰색새스타일', '3.5배흰색새스타일', '3.5배검은색새스타일', '3.5배검은색새스타일', '2.5배근시렌즈+5w헤드라이트장착가능', '2.5배근시렌즈+5w헤드라이트장착가능', '3.5배근시렌즈+5w헤드라이트장착가능', '3.5배근시렌즈+5w헤드라이트장착가능', '2.5배근시렌즈+5w긴헤드라이트장착가능', '2.5배근시렌즈+5w긴헤드라이트장착가능', '3.5배근시렌즈+5w긴헤드라이트장착가능', '3.5배근시렌즈+5w긴헤드라이트장착가능'], '하위옵션가격': [17200, 17200, 17200, 17200, 17200, 17200, 17200, 17200, 17200, 17200, 17200, 17200, 17200, 17200, 17200, 17200, 0, 0, 0, 0, 11500, 11500, 11500, 11500]}}
+Price fallback via option_list: 11,500
+Selector 'img[alt='대표이미지']' matched 2 elements.
+Selector 'img[alt^='추가이미지']' matched 5 elements.
+common_urls: ['https://shop-phinf.pstatic.net/20240215_272/1708008077095frIY8_JPEG/58763406984098358_2120876897.jpg']
+other_images: []
+Main image: https://shop-phinf.pstatic.net/20240215_272/1708008077095frIY8_JPEG/58763406984098358_2120876897.jpg
+Other images: []
+URLs not starting with most common three digits:
+https://shop-phinf.pstatic.net/20240215_77/1708008077503USeaE_JPEG/4264228373685560_812800748.jpg
+https://shop-phinf.pstatic.net/20240215_70/1708008077741KwTVK_JPEG/54641860981522126_2040461609.jpg
+https://shop-phinf.pstatic.net/20240215_260/1708008078040mBefo_JPEG/11312974433679147_1134802712.jpg
+https://shop-phinf.pstatic.net/20240215_187/1708008078395j4uSX_JPEG/35816036365424078_611430997.jpg
+Using content selector '#INTRODUCE .detail_viewer' for 9955999781
+[CONTENT][9955999781] '계속됩니다' marker detected, skipping.
+Current page URL: https://smartstore.naver.com/joypapa_/products/9955999781
+배송비: 50000
+[CONTENT][9955999781] content_crawl returned None; storing empty placeholder.
+Product 4/20: 자동 티비거치대 천장형 거치대 모니터암 회의실 학교, N/A won, https://smartstore.naver.com/joypapa_/products/9955999361
+Category: 디지털/가전>영상가전>영상가전액세서리>스탠드
+Smallest Category('tiny') : 스탠드, Naver category number: 50002853
+옵션2 클릭 실패
+Options: {'옵션1': {'하위옵션제목': ['32-55인치 행거', '32-55인치 행거', '40-75인치 행거', '40-75인치 행거'], '하위옵션가격': [0, 0, 191500, 191500]}}
+Price fallback via option_list: 191,500
+Selector 'img[alt='대표이미지']' matched 2 elements.
+Selector 'img[alt^='추가이미지']' matched 5 elements.
+common_urls: ['https://shop-phinf.pstatic.net/20240215_253/1708008072105cHK5K_JPEG/260504947613046_1575973475.jpg', 'https://shop-phinf.pstatic.net/20240215_200/1708008072331yYDMv_JPEG/260881609606918_1882788993.jpg']
+other_images: ['https://shop-phinf.pstatic.net/20240215_200/1708008072331yYDMv_JPEG/260881609606918_1882788993.jpg']
+Main image: https://shop-phinf.pstatic.net/20240215_253/1708008072105cHK5K_JPEG/260504947613046_1575973475.jpg
+Other images: ['https://shop-phinf.pstatic.net/20240215_200/1708008072331yYDMv_JPEG/260881609606918_1882788993.jpg']
+URLs not starting with most common three digits:
+https://shop-phinf.pstatic.net/20240215_189/1708008072533Mectt_JPEG/58763402421572708_837605564.jpg
+https://shop-phinf.pstatic.net/20240215_90/1708008072718Y6rIJ_JPEG/36332895582213957_1635260148.jpg
+https://shop-phinf.pstatic.net/20240215_246/1708008073008E0xGe_JPEG/2972459844379174_5073024.jpg
+Using content selector '#INTRODUCE .detail_viewer' for 9955999361
+[CONTENT][9955999361] Images after cleanup: 27
+[CONTENT][9955999361] Returning cleaned HTML content.
+Current page URL: https://smartstore.naver.com/joypapa_/products/9955999361
+배송비: 50000
+Product 5/20: 분재작업대 플라스틱 회전식 분갈이 업소용 회전판, N/A won, https://smartstore.naver.com/joypapa_/products/9955999065
+Category: 생활/건강>화방용품>조소/판화용품>조소용품
+Smallest Category('tiny') : 조소용품, Naver category number: 50003905
+옵션2 클릭 실패
+Options: {'옵션1': {'하위옵션제목': ['23cm 턴테이블', '23cm 턴테이블', '30cm 턴테이블', '30cm 턴테이블', '알루미늄 합금 직경 25cm', '알루미늄 합금 직경 25cm', '알루미늄 합금 직경 30cm', '알루미늄 합금 직경 30cm'], '하위옵션가격': [0, 0, 4600, 4600, 4600, 4600, 11000, 11000]}}
+Price fallback via option_list: 4,600
+Selector 'img[alt='대표이미지']' matched 2 elements.
+Selector 'img[alt^='추가이미지']' matched 4 elements.
+common_urls: ['https://shop-phinf.pstatic.net/20240215_131/1708008068601EHonx_JPEG/11312965023964859_1365093802.jpg']
+other_images: []
+Main image: https://shop-phinf.pstatic.net/20240215_131/1708008068601EHonx_JPEG/11312965023964859_1365093802.jpg
+Other images: []
+URLs not starting with most common three digits:
+https://shop-phinf.pstatic.net/20240215_242/1708008068843ql9Js_JPEG/2972455674469503_1010185709.jpg
+https://shop-phinf.pstatic.net/20240215_102/17080080690779UJtg_JPEG/260501917925082_286311625.jpg
+https://shop-phinf.pstatic.net/20240215_116/1708008069310pVKxU_JPEG/36332892174020943_1035769205.jpg
+Using content selector '#INTRODUCE .detail_viewer' for 9955999065
+[CONTENT][9955999065] '계속됩니다' marker detected, skipping.
+Current page URL: https://smartstore.naver.com/joypapa_/products/9955999065
+배송비: 50000
+[CONTENT][9955999065] content_crawl returned None; storing empty placeholder.
+Reached MAX_PRODUCTS_PER_PAGE=5, stop crawling this page.
+Completed page 61
+Reached MAX_PRODUCTS_TOTAL=5, stopping after page 61.
+Row 3, Content: 
+Row 4, Content: <img src="https://axh2eqadoldy.compat.objectstorage.ap-chuncheon-1.oraclecloud.com/bucket-20230610-0
+Row 5, Content: 
+Row 6, Content: <img src="https://axh2eqadoldy.compat.objectstorage.ap-chuncheon-1.oraclecloud.com/bucket-20230610-0
+Row 7, Content: 
+Processed pages 61 to 61
+MAX_PRODUCTS_TOTAL reached; ending crawl.
