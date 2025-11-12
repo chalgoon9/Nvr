@@ -1,2 +1,4 @@
-리스트 변경 감지로 페이지 51 이동 성공으로 간주
-페이지 51 이동을 위해 next 버튼 클릭 시도 (현재 1).
+[2025-11-12 14:50:18] PLAYWRIGHT START
+[2025-11-12 14:50:18] DEBUG_DIR: debug
+[2025-11-12 14:50:18] Launching chromium headless=False slow_mo=0
+[2025-11-12 14:50:18] Context creation failed: name 'start_tracing' is not defined
