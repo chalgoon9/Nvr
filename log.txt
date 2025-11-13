@@ -21,11 +21,16 @@ Main image: https://shop-phinf.pstatic.net/20240215_91/1708008090579szUzl_JPEG/4
 Other images: []
 URLs not starting with most common three digits:
 https://shop-phinf.pstatic.net/20240215_23/17080080908117Kvks_JPEG/260900090342195_265343861.jpg
-Using content selector '#INTRODUCE .detail_viewer' for 9956000679
-[CONTENT][9956000679] '계속됩니다' marker detected, skipping.
+[CONTENT][9956000679] Trying selector: #INTRODUCE > div > div.LXGzUhHJC2.EtTm8LLHdw.Uea3oKmnaJ > div > div > div > div > div > div > div
+[CONTENT][9956000679] Trying selector: #INTRODUCE > div > div.LXGzUhHJC2.EtTm8LLHdw > div > div > div > div > div > div > div
+Using content selector '#INTRODUCE > div > div.LXGzUhHJC2.EtTm8LLHdw > div > div > div > div > div > div > div' for 9956000679
+[CONTENT][9956000679] Removed 19 blob media blocks, simplified 0 playable videos.
+[CONTENT][9956000679] Removed 29 extra DOM nodes during cleanup.
+[CONTENT][9956000679] Images after cleanup: 21
+[CONTENT][9956000679] Saved content output (cleaned): C:\dev_win\naver_crawler\debug\content_outputs\9956000679_cleaned_20251113_164315.html
+[CONTENT][9956000679] Returning cleaned HTML content.
 Current page URL: https://smartstore.naver.com/joypapa_/products/9956000679
 배송비: 50000
-[CONTENT][9956000679] content_crawl returned None; storing empty placeholder.
 Product 2/20: 신생아 아기 인체모형 CPR 심폐소생술 병원 실습 연습, N/A won, https://smartstore.naver.com/joypapa_/products/9956000033
 Category: 생활/건강>수집품>모형/프라모델/피규어>모형
 Smallest Category('tiny') : 모형, Naver category number: 50004136
@@ -42,8 +47,13 @@ URLs not starting with most common three digits:
 https://shop-phinf.pstatic.net/20240215_284/1708008081263P1UWH_JPEG/35816039238814189_1383881282.jpg
 https://shop-phinf.pstatic.net/20240215_101/1708008081447dJMv7_JPEG/260890726705786_191253551.jpg
 https://shop-phinf.pstatic.net/20240215_52/1708008082410e7qdV_JPEG/11312978828604052_1043138725.jpg
-Using content selector '#INTRODUCE .detail_viewer' for 9956000033
-[CONTENT][9956000033] Images after cleanup: 16
+[CONTENT][9956000033] Trying selector: #INTRODUCE > div > div.LXGzUhHJC2.EtTm8LLHdw.Uea3oKmnaJ > div > div > div > div > div > div > div
+[CONTENT][9956000033] Trying selector: #INTRODUCE > div > div.LXGzUhHJC2.EtTm8LLHdw > div > div > div > div > div > div > div
+Using content selector '#INTRODUCE > div > div.LXGzUhHJC2.EtTm8LLHdw > div > div > div > div > div > div > div' for 9956000033
+[CONTENT][9956000033] Removed 1 blob media blocks, simplified 0 playable videos.
+[CONTENT][9956000033] Removed 1 extra DOM nodes during cleanup.
+[CONTENT][9956000033] Images after cleanup: 11
+[CONTENT][9956000033] Saved content output (cleaned): C:\dev_win\naver_crawler\debug\content_outputs\9956000033_cleaned_20251113_164351.html
 [CONTENT][9956000033] Returning cleaned HTML content.
 Current page URL: https://smartstore.naver.com/joypapa_/products/9956000033
 배송비: 50000
@@ -64,11 +74,16 @@ https://shop-phinf.pstatic.net/20240215_77/1708008077503USeaE_JPEG/4264228373685
 https://shop-phinf.pstatic.net/20240215_70/1708008077741KwTVK_JPEG/54641860981522126_2040461609.jpg
 https://shop-phinf.pstatic.net/20240215_260/1708008078040mBefo_JPEG/11312974433679147_1134802712.jpg
 https://shop-phinf.pstatic.net/20240215_187/1708008078395j4uSX_JPEG/35816036365424078_611430997.jpg
-Using content selector '#INTRODUCE .detail_viewer' for 9955999781
-[CONTENT][9955999781] '계속됩니다' marker detected, skipping.
+[CONTENT][9955999781] Trying selector: #INTRODUCE > div > div.LXGzUhHJC2.EtTm8LLHdw.Uea3oKmnaJ > div > div > div > div > div > div > div
+[CONTENT][9955999781] Trying selector: #INTRODUCE > div > div.LXGzUhHJC2.EtTm8LLHdw > div > div > div > div > div > div > div
+Using content selector '#INTRODUCE > div > div.LXGzUhHJC2.EtTm8LLHdw > div > div > div > div > div > div > div' for 9955999781
+[CONTENT][9955999781] Removed 19 blob media blocks, simplified 0 playable videos.
+[CONTENT][9955999781] Removed 29 extra DOM nodes during cleanup.
+[CONTENT][9955999781] Images after cleanup: 20
+[CONTENT][9955999781] Saved content output (cleaned): C:\dev_win\naver_crawler\debug\content_outputs\9955999781_cleaned_20251113_164427.html
+[CONTENT][9955999781] Returning cleaned HTML content.
 Current page URL: https://smartstore.naver.com/joypapa_/products/9955999781
 배송비: 50000
-[CONTENT][9955999781] content_crawl returned None; storing empty placeholder.
 Product 4/20: 자동 티비거치대 천장형 거치대 모니터암 회의실 학교, N/A won, https://smartstore.naver.com/joypapa_/products/9955999361
 Category: 디지털/가전>영상가전>영상가전액세서리>스탠드
 Smallest Category('tiny') : 스탠드, Naver category number: 50002853
@@ -85,8 +100,13 @@ URLs not starting with most common three digits:
 https://shop-phinf.pstatic.net/20240215_189/1708008072533Mectt_JPEG/58763402421572708_837605564.jpg
 https://shop-phinf.pstatic.net/20240215_90/1708008072718Y6rIJ_JPEG/36332895582213957_1635260148.jpg
 https://shop-phinf.pstatic.net/20240215_246/1708008073008E0xGe_JPEG/2972459844379174_5073024.jpg
-Using content selector '#INTRODUCE .detail_viewer' for 9955999361
-[CONTENT][9955999361] Images after cleanup: 27
+[CONTENT][9955999361] Trying selector: #INTRODUCE > div > div.LXGzUhHJC2.EtTm8LLHdw.Uea3oKmnaJ > div > div > div > div > div > div > div
+[CONTENT][9955999361] Trying selector: #INTRODUCE > div > div.LXGzUhHJC2.EtTm8LLHdw > div > div > div > div > div > div > div
+Using content selector '#INTRODUCE > div > div.LXGzUhHJC2.EtTm8LLHdw > div > div > div > div > div > div > div' for 9955999361
+[CONTENT][9955999361] Removed 1 blob media blocks, simplified 0 playable videos.
+[CONTENT][9955999361] Removed 1 extra DOM nodes during cleanup.
+[CONTENT][9955999361] Images after cleanup: 17
+[CONTENT][9955999361] Saved content output (cleaned): C:\dev_win\naver_crawler\debug\content_outputs\9955999361_cleaned_20251113_164503.html
 [CONTENT][9955999361] Returning cleaned HTML content.
 Current page URL: https://smartstore.naver.com/joypapa_/products/9955999361
 배송비: 50000
@@ -106,18 +126,23 @@ URLs not starting with most common three digits:
 https://shop-phinf.pstatic.net/20240215_242/1708008068843ql9Js_JPEG/2972455674469503_1010185709.jpg
 https://shop-phinf.pstatic.net/20240215_102/17080080690779UJtg_JPEG/260501917925082_286311625.jpg
 https://shop-phinf.pstatic.net/20240215_116/1708008069310pVKxU_JPEG/36332892174020943_1035769205.jpg
-Using content selector '#INTRODUCE .detail_viewer' for 9955999065
-[CONTENT][9955999065] '계속됩니다' marker detected, skipping.
+[CONTENT][9955999065] Trying selector: #INTRODUCE > div > div.LXGzUhHJC2.EtTm8LLHdw.Uea3oKmnaJ > div > div > div > div > div > div > div
+[CONTENT][9955999065] Trying selector: #INTRODUCE > div > div.LXGzUhHJC2.EtTm8LLHdw > div > div > div > div > div > div > div
+Using content selector '#INTRODUCE > div > div.LXGzUhHJC2.EtTm8LLHdw > div > div > div > div > div > div > div' for 9955999065
+[CONTENT][9955999065] Removed 18 blob media blocks, simplified 0 playable videos.
+[CONTENT][9955999065] Removed 30 extra DOM nodes during cleanup.
+[CONTENT][9955999065] Images after cleanup: 20
+[CONTENT][9955999065] Saved content output (cleaned): C:\dev_win\naver_crawler\debug\content_outputs\9955999065_cleaned_20251113_164539.html
+[CONTENT][9955999065] Returning cleaned HTML content.
 Current page URL: https://smartstore.naver.com/joypapa_/products/9955999065
 배송비: 50000
-[CONTENT][9955999065] content_crawl returned None; storing empty placeholder.
 Reached MAX_PRODUCTS_PER_PAGE=5, stop crawling this page.
 Completed page 61
 Reached MAX_PRODUCTS_TOTAL=5, stopping after page 61.
-Row 3, Content: 
+Row 3, Content: <img src="https://axh2eqadoldy.compat.objectstorage.ap-chuncheon-1.oraclecloud.com/bucket-20230610-0
 Row 4, Content: <img src="https://axh2eqadoldy.compat.objectstorage.ap-chuncheon-1.oraclecloud.com/bucket-20230610-0
-Row 5, Content: 
+Row 5, Content: <img src="https://axh2eqadoldy.compat.objectstorage.ap-chuncheon-1.oraclecloud.com/bucket-20230610-0
 Row 6, Content: <img src="https://axh2eqadoldy.compat.objectstorage.ap-chuncheon-1.oraclecloud.com/bucket-20230610-0
-Row 7, Content: 
+Row 7, Content: <img src="https://axh2eqadoldy.compat.objectstorage.ap-chuncheon-1.oraclecloud.com/bucket-20230610-0
 Processed pages 61 to 61
 MAX_PRODUCTS_TOTAL reached; ending crawl.

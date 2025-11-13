@@ -87,6 +87,9 @@ def resolve_category_path() -> Path:
 
 NAVER_CATEGORY_PATH = resolve_category_path()
 CRAWLER_DRY_RUN = os.getenv("CRAWLER_DRY_RUN", "0").lower() in {"1", "true", "yes"}
+WRAP_CONTENT_HTML = os.getenv("WRAP_CONTENT_HTML", "0").lower() in {"1", "true", "yes"}
+DUMP_CONTENT_HTML = os.getenv("DUMP_CONTENT_HTML", "0").lower() in {"1", "true", "yes"}
+DUMP_CONTENT_DIR = SCRIPT_DIR / "debug" / "content_outputs"
 
 # 선택 페이지만 크롤링하는 디버그용 옵션(예: CRAWL_ONLY_PAGES="51,59").
 # 지정되지 않으면 기존 범위(global_start_page~global_last_page) 전체를 처리합니다.
@@ -171,6 +174,18 @@ def save_debug_snapshot(page, prefix):
         print(f"Saved debug snapshot: {out}")
     except Exception as exc:
         print(f"Failed to save debug snapshot: {exc}")
+
+
+def save_debug_html(product_code, html_text, suffix):
+    path = (SCRIPT_DIR / "debug")
+    path.mkdir(exist_ok=True)
+    timestamp = time.strftime("%Y%m%d_%H%M%S")
+    filename = path / f"{product_code}_{suffix}_{timestamp}.html"
+    try:
+        filename.write_text(html_text, encoding="utf-8")
+        print(f"[CONTENT][{product_code}] Saved debug HTML: {filename}")
+    except Exception as exc:
+        print(f"[CONTENT][{product_code}] Failed to save debug HTML: {exc}")
 
 
 def extract_price_from_text(raw_text):
@@ -951,21 +966,26 @@ def find_content_element(page, product_code):
     ensure_product_detail_visible(page)
 
     content_selectors = [
+        '#INTRODUCE > div > div.LXGzUhHJC2.EtTm8LLHdw.Uea3oKmnaJ > div > div > div > div > div > div > div',
+        '#INTRODUCE > div > div.LXGzUhHJC2.EtTm8LLHdw > div > div > div > div > div > div > div',
         '#INTRODUCE .detail_viewer',
         '#INTRODUCE [data-component-id]',
+        '#INTRODUCE .se-main-container',
         '#INTRODUCE',
         '[data-name="INTRODUCE"][role="tabpanel"]',
         'xpath=//*[@id="INTRODUCE"]//div[contains(@data-component-id,"INTRODUCE")]//div[contains(@class,"se_component")]//div[last()]',
+        'xpath=//*[@id="INTRODUCE"]//div[contains(@class,"se-main-container")]',
         'xpath=//*[@id="INTRODUCE"]/div/div[4]',
     ]
 
     for selector in content_selectors:
+        print(f"[CONTENT][{product_code}] Trying selector: {selector}")
         element = page.query_selector(selector)
         if element is not None:
             print(f"Using content selector '{selector}' for {product_code}")
             return selector
 
-    print("상품 상세 컨텐츠 영역을 찾지 못했습니다. 스냅샷 저장 후 None 반환")
+    print(f"[CONTENT][{product_code}] 상품 상세 컨텐츠 영역을 찾지 못했습니다. 스냅샷 저장 후 None 반환")
     save_debug_snapshot(page, f"content_{product_code}")
     return None
 
@@ -1305,6 +1325,193 @@ def log_content_debug(product_code, message):
     print(f"[CONTENT][{product_code}] {message}")
 
 
+def wrap_html_document(snippet):
+    if not snippet:
+        return ""
+    return (
+        "<!DOCTYPE html>"
+        "<html lang=\"ko\">"
+        "<head>"
+        "<meta charset=\"utf-8\">"
+        "<style>body{margin:0;padding:0;background:#fff;}</style>"
+        "</head>"
+        "<body>"
+        f"{snippet}"
+        "</body>"
+        "</html>"
+    )
+
+
+def dump_content_html(product_code, html_text, label):
+    if not DUMP_CONTENT_HTML:
+        return
+    if not html_text:
+        return
+    try:
+        DUMP_CONTENT_DIR.mkdir(parents=True, exist_ok=True)
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        filename = DUMP_CONTENT_DIR / f"{product_code}_{label}_{timestamp}.html"
+        filename.write_text(html_text, encoding="utf-8")
+        print(f"[CONTENT][{product_code}] Saved content output ({label}): {filename}")
+    except Exception as exc:
+        print(f"[CONTENT][{product_code}] Failed to save content output: {exc}")
+
+
+def cleanup_dom_structure(soup, product_code):
+    removed = 0
+
+    for tag_name in ("style", "script", "svg", "canvas"):
+        for node in list(soup.find_all(tag_name)):
+            node.decompose()
+            removed += 1
+
+    selectors_to_remove = [
+        ".pzp-ui-dimmed",
+        ".pzp-upnext-endscreen",
+        ".pzp-ui-playlist",
+        ".pzp-double-tap-overlay",
+        ".pzp-ad-break-indicator",
+        ".pzp-pc__poster",
+        ".pzp-ui-circle-process",
+        ".pzp-ui-dimmed",
+    ]
+    for selector in selectors_to_remove:
+        for node in list(soup.select(selector)):
+            node.decompose()
+            removed += 1
+
+    selectors_to_unwrap = [
+        ".se-main-container",
+        ".editor_wrap",
+        ".se-viewer",
+        ".uOXg8u0yzs",
+        ".LXGzUhHJC2",
+        ".EtTm8LLHdw",
+        ".Uea3oKmnaJ",
+        ".se-component",
+        ".se-component-content",
+        ".se-section",
+        ".se-module",
+        ".se-section-video",
+        ".se-module-video",
+        "[aria-label*='비디오']",
+        "[aria-label*='동영상']",
+        "[id^='wpc-']",
+        ".pzp-pc__video",
+    ]
+    for selector in selectors_to_unwrap:
+        for node in list(soup.select(selector)):
+            node.unwrap()
+
+    if removed:
+        log_content_debug(product_code, f"Removed {removed} extra DOM nodes during cleanup.")
+
+
+def strip_blob_media(soup, product_code):
+    removed = 0
+    simplified_videos = 0
+
+    for component in list(soup.select(".se-component.se-video")):
+        playable_src = None
+        video_tags = component.find_all("video")
+        for video_tag in video_tags:
+            src_candidates = [video_tag.get("src"), video_tag.get("data-src")]
+            for candidate in src_candidates:
+                if candidate and not candidate.startswith("blob:"):
+                    playable_src = candidate
+                    break
+            if playable_src:
+                break
+
+        if playable_src:
+            simple_video = soup.new_tag("video")
+            simple_video["src"] = playable_src
+            simple_video["controls"] = "controls"
+            simple_video["autoplay"] = "autoplay"
+            simple_video["muted"] = "muted"
+            simple_video["loop"] = "loop"
+            simple_video["style"] = "display:block;margin:0 auto 20px auto;max-width:100%;"
+            component.replace_with(simple_video)
+            simplified_videos += 1
+        else:
+            component.decompose()
+            removed += 1
+
+    blob_tags = []
+    for tag in soup.find_all(["video", "source", "iframe", "canvas"]):
+        attrs = [
+            tag.get("src", ""),
+            tag.get("data-src", ""),
+            tag.get("poster", ""),
+        ]
+        if any(attr and "blob:" in attr for attr in attrs):
+            blob_tags.append(tag)
+
+    for tag in blob_tags:
+        parent = tag.find_parent(class_="se-component se-video") or tag
+        parent.decompose()
+        removed += 1
+
+    extra_selectors = [
+        ".prismplayer-area",
+        "[class*='pzp-']",
+        "[class*='pzp_']",
+        "[class*='pzp ']",
+        "[class~='pzp']",
+        "[class*='webplayer']",
+        "[class*='player-area']",
+        "[class*='pzp-pc']",
+        "[class*='pzp-ui']",
+        "[class*='pzp-upnext']",
+    ]
+    for selector in extra_selectors:
+        for node in soup.select(selector):
+            node.decompose()
+            removed += 1
+
+    video_text_keywords = (
+        "광고 후 계속됩니다",
+        "다음 동영상",
+        "subject",
+        "author",
+        "재생 속도",
+        "해상도",
+        "자막",
+        "옵션",
+        "도움말",
+        "죄송합니다. 문제가 발생했습니다",
+        "고화질 재생이 가능한 영상입니다",
+        "더 알아보기",
+        "00:00",
+        "0:00",
+    )
+    removed_text = 0
+    for text_node in list(soup.find_all(string=True)):
+        stripped = text_node.strip()
+        if not stripped:
+            continue
+        if any(keyword in stripped for keyword in video_text_keywords):
+            container = getattr(text_node, "parent", None)
+            if container is None:
+                continue
+            if container.name in {"html", "body"}:
+                continue
+            parent_component = container.find_parent(class_="se-component se-video")
+            target = parent_component or container
+            try:
+                target.decompose()
+                removed_text += 1
+            except Exception:
+                continue
+    removed += removed_text
+
+    if removed or simplified_videos:
+        log_content_debug(
+            product_code,
+            f"Removed {removed} blob media blocks, simplified {simplified_videos} playable videos.",
+        )
+
+
 def content_crawl(page, product_code, element_selector):
     time.sleep(1)
     page.wait_for_load_state("load")
@@ -1316,13 +1523,20 @@ def content_crawl(page, product_code, element_selector):
     element = page.query_selector(element_selector)
     if element is None:
         log_content_debug(product_code, f"Selector '{element_selector}' resolved to None.")
+        save_debug_snapshot(page, f"content_missing_{product_code}")
         return None
 
     raw_content = element.inner_html()
+    if not (raw_content or "").strip():
+        log_content_debug(product_code, "Element inner_html is empty; capturing page snapshot.")
+        save_debug_snapshot(page, f"content_empty_{product_code}")
+        return None
     soup = BeautifulSoup(raw_content, 'html.parser')
 
-    if '계속됩니다' in soup.get_text():
-        log_content_debug(product_code, "'계속됩니다' marker detected, skipping.")
+    text_snapshot = soup.get_text(strip=True)
+    normalized_text = text_snapshot.replace(" ", "").replace("\u00a0", "")
+    if normalized_text in {"계속됩니다", "계속됩니다.", "계속됩니다..", "계속됩니다..."}:
+        log_content_debug(product_code, "'계속됩니다' placeholder detected (no other content), skipping.")
         return None
 
     css_link = soup.new_tag(
@@ -1374,6 +1588,9 @@ def content_crawl(page, product_code, element_selector):
         if any(src.startswith(prefix) for prefix in _BLOCKED_IMAGE_PREFIXES):
             img.decompose()
 
+    strip_blob_media(soup, product_code)
+    cleanup_dom_structure(soup, product_code)
+
     remaining_img_count = len(soup.find_all('img'))
     log_content_debug(product_code, f"Images after cleanup: {remaining_img_count}")
 
@@ -1399,17 +1616,26 @@ def content_crawl(page, product_code, element_selector):
         if (img.get("src") or "").strip() and (img.get("src").strip() not in BRANDING_IMAGE_URLS)
     ]
     has_text = bool(soup.get_text(strip=True))
+    final_html = cleaned_html
+    final_label = "cleaned"
+
     if not has_text and not meaningful_imgs:
         log_content_debug(product_code, "Content empty after cleanup; applying fallback gallery extraction.")
         fallback = build_image_gallery(raw_content, product_code)
-        if fallback is not None:
-            log_content_debug(product_code, "Fallback gallery extraction succeeded.")
-            return fallback
-        log_content_debug(product_code, "Fallback gallery extraction failed; returning None.")
-        return None
+        if fallback is None:
+            log_content_debug(product_code, "Fallback gallery extraction failed; returning None.")
+            save_debug_html(product_code, raw_content, "fallback_failed")
+            return None
+        final_html = fallback
+        final_label = "fallback_gallery"
+        log_content_debug(product_code, "Fallback gallery extraction succeeded.")
 
+    if WRAP_CONTENT_HTML:
+        final_html = wrap_html_document(final_html)
+
+    dump_content_html(product_code, final_html, final_label)
     log_content_debug(product_code, "Returning cleaned HTML content.")
-    return pd.DataFrame({"Content": [cleaned_html]})
+    return pd.DataFrame({"Content": [final_html]})
 
 
 def insert_and_remove_images(soup):
@@ -1483,7 +1709,7 @@ def build_image_gallery(raw_html, product_code="UNKNOWN"):
         return None
 
     log_content_debug(product_code, "Fallback gallery extraction produced image-only content.")
-    return pd.DataFrame({'Content': [str(filtered)]})
+    return str(filtered)
 
 
 def return_shipping_fee(total_price):
