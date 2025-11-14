@@ -1,11 +1,11 @@
-﻿from pathlib import Path
+from pathlib import Path
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 try:
     from playwright_stealth import Stealth
 except ImportError:
     Stealth = None
 from collections import Counter
-from bs4 import BeautifulSoup, Tag
+from bs4 import BeautifulSoup
 from openpyxl import load_workbook
 import pandas as pd
 import random
@@ -19,14 +19,14 @@ import sys
 from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
 
 
-# 페이지당 최대 크롤링 상품 수 (0이면 제한 없음)
+# 페이지당 최대 크롤링 상품 수 (테스트 기본값 5개)
 DEFAULT_MAX_PRODUCTS_PER_PAGE = 5
 MAX_PRODUCTS_PER_PAGE = int(
     os.getenv("MAX_PRODUCTS_PER_PAGE", str(DEFAULT_MAX_PRODUCTS_PER_PAGE)) or DEFAULT_MAX_PRODUCTS_PER_PAGE
 )
 
-# 전체 실행에서 최대 수집 상품 수 (0이면 제한 없음)
-DEFAULT_MAX_PRODUCTS_TOTAL = 5
+# 전체 실행에서 최대 수집 상품 수 (테스트 기본값 5개)
+DEFAULT_MAX_PRODUCTS_TOTAL = DEFAULT_MAX_PRODUCTS_PER_PAGE
 MAX_PRODUCTS_TOTAL = int(
     os.getenv("MAX_PRODUCTS_TOTAL", str(DEFAULT_MAX_PRODUCTS_TOTAL)) or DEFAULT_MAX_PRODUCTS_TOTAL
 )
@@ -71,11 +71,6 @@ def fallback_load_dotenv(dotenv_path):
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 LOG_FILE = SCRIPT_DIR / "log.txt"
-
-# Excel template and output locations
-TEMPLATE_DIR = SCRIPT_DIR / "naver_excel_template"
-EXCEL_TEMPLATE_PATH = TEMPLATE_DIR / "ExcelSaveTemplate_230109.xlsx"
-OUTPUT_DIR = SCRIPT_DIR / "output"
 
 
 def resolve_category_path() -> Path:
@@ -337,8 +332,8 @@ def product_list_crawl(context, df, read_excel_path, seen_urls):
     shopname = raw_url.split('/')[3]
     shopnumber = raw_url.split('/')[5].split('?')[0]
 
-    # 원래 코드와 동일하게 Desktop/excel_output 아래에 결과 엑셀을 생성
-    output_folder = OUTPUT_DIR
+    home_dir = Path.home()
+    output_folder = home_dir / 'Desktop' / 'excel_output'
     output_folder.mkdir(parents=True, exist_ok=True)
 
     pagination_button_labels = {
@@ -859,10 +854,7 @@ def product_list_crawl(context, df, read_excel_path, seen_urls):
                 continue
         else:
             group_target_pages = list(range(start_page, last_page + 1))
-
-        # 타임스탬프(YYMMDDHHMM)를 파일명에 붙여 구분
-        ts = time.strftime("%y%m%d%H%M")
-        write_excel_path = output_folder / f'dolce_{shopname}_{shopnumber}_{start_page}_{last_page}_{ts}.xlsx'
+        write_excel_path = output_folder / f'dolce_{shopname}_{shopnumber}_{start_page}_{last_page}.xlsx'
         shutil.copy(read_excel_path, write_excel_path)
 
         # 그룹 내 최초 타겟 페이지로 이동
@@ -889,8 +881,10 @@ def product_list_crawl(context, df, read_excel_path, seen_urls):
                 break
 
         write_to_excel(df, write_excel_path, seen_urls)
-        second_path = output_folder / f'dolce_{shopname}_{shopnumber}_{start_page}_{last_page}_{ts}_second.xlsx'
-        write_to_excel2(df, second_path)
+        write_to_excel2(
+            df,
+            output_folder / f'dolce_{shopname}_{shopnumber}_{start_page}_{last_page}_second.xlsx'
+        )
         print(f"Processed pages {start_page} to {last_page}")
         if reached_total_limit:
             print("MAX_PRODUCTS_TOTAL reached; ending crawl.")
@@ -1176,18 +1170,13 @@ def option_crawl(page):
             category = f"옵션{option_index}"
 
         try:
-            # Ensure element is scrolled into view before clicking (headless-safe)
-            try:
-                trigger.scroll_into_view_if_needed()
-            except Exception:
-                pass
             trigger.click()
         except PlaywrightTimeoutError:
             print(f"{category} 클릭 실패")
             continue
 
         try:
-            dropdown = page.wait_for_selector("ul[role=\"listbox\"]", state="visible", timeout=15000)
+            dropdown = page.wait_for_selector("ul[role=\"listbox\"]", timeout=15000)
         except PlaywrightTimeoutError:
             print(f"{category} 옵션 리스트 로드 실패")
             continue
@@ -1195,7 +1184,6 @@ def option_crawl(page):
         items = dropdown.query_selector_all("[role='option'], a, li")
         current_options = []
         current_prices = []
-        seen_names = set()
 
         for item in items:
             option_text = item.inner_text().strip()
@@ -1209,12 +1197,7 @@ def option_crawl(page):
                 price_value = 0
                 name = option_text
 
-            # De-duplicate by normalized visible text to prevent double capture
-            name_norm = re.sub(r"\s+", " ", name)
-            if name_norm in seen_names:
-                continue
-            seen_names.add(name_norm)
-            current_options.append(name_norm)
+            current_options.append(name)
             current_prices.append(price_value)
 
         if not current_options:
@@ -1420,111 +1403,8 @@ def cleanup_dom_structure(soup, product_code):
         for node in list(soup.select(selector)):
             node.unwrap()
 
-    structural_tags = ["div", "span", "p"]
-    for tag in list(soup.find_all(structural_tags)):
-        if not isinstance(tag, Tag):
-            continue
-        if tag is None:
-            continue
-        attrs = getattr(tag, "attrs", {}) or {}
-        style_attr = attrs.get("style", "") or ""
-        style_attr = "; ".join(filter(None, (piece.strip() for piece in style_attr.split(";"))))
-        if style_attr:
-            tag["style"] = style_attr
-        else:
-            try:
-                tag.attrs.pop("style")
-            except (KeyError, AttributeError):
-                pass
-
-        has_media = tag.find(["img", "video"])
-        has_text = bool(tag.get_text(strip=True))
-        if not has_media and not has_text:
-            tag.decompose()
-            continue
-        if tag.name == "div" and tag.find("p") and not has_media:
-            for pchild in list(tag.find_all("p", recursive=False)):
-                tag.insert_before(pchild)
-            tag.unwrap()
-            continue
-        if tag.name != "p":
-            tag.unwrap()
-
-    for a_tag in list(soup.find_all("a")):
-        a_tag.unwrap()
-
-    for br in list(soup.find_all("br")):
-        if not br.previous_sibling and not br.next_sibling:
-            br.decompose()
-
-    log_content_debug(product_code, "DOM cleanup completed.")
-
     if removed:
         log_content_debug(product_code, f"Removed {removed} extra DOM nodes during cleanup.")
-
-
-def build_minimal_html(soup, product_code):
-    minimal = BeautifulSoup("", "html.parser")
-    fragments = []
-
-    css_link = soup.find("link", href=True)
-    if css_link:
-        head = minimal.new_tag("head")
-        link = minimal.new_tag("link", rel="stylesheet", href=css_link.get("href"))
-        head.append(link)
-        fragments.append(head)
-
-    allowed_headings = {"h1", "h2", "h3"}
-
-    for node in soup.descendants:
-        if not isinstance(node, Tag):
-            continue
-        name = node.name
-        if name == "img":
-            src = (node.get("src") or "").strip()
-            if not src:
-                continue
-            img = minimal.new_tag("img", src=src)
-            img["style"] = "display: block; margin-left: auto; margin-right: auto; margin-bottom: 10px;"
-            fragments.append(img)
-            fragments.append(minimal.new_tag("br"))
-        elif name == "video":
-            src = (node.get("src") or "").strip()
-            if not src or src.startswith("blob:"):
-                continue
-            video = minimal.new_tag("video")
-            video["src"] = src
-            video["controls"] = "controls"
-            video["autoplay"] = "autoplay"
-            video["muted"] = "muted"
-            video["loop"] = "loop"
-            video["style"] = "display:block;margin:0 auto 20px auto;max-width:100%;"
-            fragments.append(video)
-            fragments.append(minimal.new_tag("br"))
-        elif name in allowed_headings:
-            text = node.get_text(" ", strip=True)
-            if not text:
-                continue
-            heading = minimal.new_tag(name)
-            heading.string = text
-            fragments.append(heading)
-        elif name == "p":
-            text = node.get_text(" ", strip=True)
-            if not text:
-                continue
-            p = minimal.new_tag("p")
-            p.string = text
-            fragments.append(p)
-
-    if not fragments:
-        return ""
-
-    html_parts = []
-    for frag in fragments:
-        html_parts.append(str(frag))
-    result = "".join(html_parts)
-    log_content_debug(product_code, "Minimal HTML rebuilt.")
-    return result
 
 
 def strip_blob_media(soup, product_code):
@@ -1729,8 +1609,7 @@ def content_crawl(page, product_code, element_selector):
             new_style = f"{existing_style}; text-align: center; font-size: 18px; margin-bottom: 30px;"
             node["style"] = new_style.strip()
 
-    minimal_html = build_minimal_html(soup, product_code)
-    cleaned_html = minimal_html or str(soup).strip()
+    cleaned_html = str(soup).strip()
 
     meaningful_imgs = [
         img for img in soup.find_all("img")
@@ -2142,8 +2021,7 @@ def write_to_excel(df, excel_path, seen_urls):
             break
     book.save(excel_path)
 
-    OPEN_EXCEL_AFTER_SAVE = os.getenv("OPEN_EXCEL_AFTER_SAVE", "0").lower() in {"1", "true", "yes"}
-    if os.name == "nt" and OPEN_EXCEL_AFTER_SAVE:
+    if os.name == "nt":
         os.system(f'start "" "excel.exe" "{excel_path}"')
     else:
         print(f"Excel file saved to {excel_path}. Automatic Excel launch is skipped on non-Windows platforms.")
@@ -2209,7 +2087,8 @@ with sync_playwright() as p:
         'Product_URL',
     ]
     df = pd.DataFrame(columns=df_columns)
-    read_excel_path = EXCEL_TEMPLATE_PATH
+    output_folder = SCRIPT_DIR / 'output'
+    read_excel_path = output_folder / 'ExcelSaveTemplate_230109.xlsx'
     seen_urls = set()
 
     product_list_crawl(context, df, read_excel_path, seen_urls)
@@ -2220,4 +2099,3 @@ with sync_playwright() as p:
 
 sys.stdout = original
 f.close()
-
