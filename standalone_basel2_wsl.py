@@ -1,4 +1,4 @@
-from pathlib import Path
+﻿from pathlib import Path
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 try:
     from playwright_stealth import Stealth
@@ -164,10 +164,10 @@ def normalize_cdp_url(raw_url):
     normalized_scheme = "https" if scheme in {"https", "wss"} else "http"
     return urlunsplit((normalized_scheme, netloc, "", "", ""))
 
-# 페이지당 최대 크롤링 상품 수 (0이면 제한 없음)
+# ?섏씠吏??理쒕? ?щ·留??곹뭹 ??(0?대㈃ ?쒗븳 ?놁쓬)
 MAX_PRODUCTS_PER_PAGE = int(os.getenv("MAX_PRODUCTS_PER_PAGE", "0") or 0)
 
-## 시작
+## ?쒖옉
 
 try:
     from dotenv import load_dotenv
@@ -183,7 +183,7 @@ def fallback_load_dotenv(dotenv_path):
     except FileNotFoundError:
         return False
     except OSError as exc:
-        print(f".env 파일을 읽는 중 오류가 발생했습니다: {exc}")
+        print(f".env ?뚯씪???쎈뒗 以??ㅻ쪟媛 諛쒖깮?덉뒿?덈떎: {exc}")
         return False
 
     loaded = False
@@ -200,7 +200,7 @@ def fallback_load_dotenv(dotenv_path):
         value = value.strip().strip("\"'")  # drop simple quoting
         if not key:
             continue
-        # 이미 환경변수가 지정되어 있다면 덮어쓰지 않는다.
+        # ?대? ?섍꼍蹂?섍? 吏?뺣릺???덈떎硫???뼱?곗? ?딅뒗??
         if key not in os.environ:
             os.environ[key] = value
             loaded = True
@@ -212,14 +212,14 @@ NAVER_CATEGORY_PATH = SCRIPT_DIR / "naver_category.xlsx"
 AUTO_LAUNCH_CHROME_DEVTOOLS = os.getenv("AUTO_LAUNCH_CHROME_DEVTOOLS", "1").lower() not in {"0", "false", "no"}
 REQUIRE_CDP_CONNECTION = os.getenv("REQUIRE_CDP_CONNECTION", "0").lower() in {"1", "true", "yes"}
 CRAWLER_DRY_RUN = os.getenv("CRAWLER_DRY_RUN", "0").lower() in {"1", "true", "yes"}
-# Windows-only 간소 모드: CDP 연결 및 배치 실행 모두 생략하고 로컬 Chromium을 직접 실행
+# Windows-only 媛꾩냼 紐⑤뱶: CDP ?곌껐 諛?諛곗튂 ?ㅽ뻾 紐⑤몢 ?앸왂?섍퀬 濡쒖뺄 Chromium??吏곸젒 ?ㅽ뻾
 FORCE_LOCAL_PLAYWRIGHT = os.getenv("FORCE_LOCAL_PLAYWRIGHT", "0").lower() in {"1", "true", "yes"}
 
 STEALTH_HELPER = Stealth() if Stealth is not None else None
 if STEALTH_HELPER is None:
     print(
-        "playwright_stealth 모듈에서 Stealth 클래스를 불러오지 못했습니다. "
-        "탐지 회피 스크립트가 적용되지 않으니 chromium 환경에서는 추가 점검이 필요합니다."
+        "playwright_stealth 紐⑤뱢?먯꽌 Stealth ?대옒?ㅻ? 遺덈윭?ㅼ? 紐삵뻽?듬땲?? "
+        "?먯? ?뚰뵾 ?ㅽ겕由쏀듃媛 ?곸슜?섏? ?딆쑝??chromium ?섍꼍?먯꽌??異붽? ?먭????꾩슂?⑸땲??"
     )
 
 
@@ -229,26 +229,26 @@ else:
     dotenv_loaded = fallback_load_dotenv(Path(__file__).with_name(".env"))
     if not dotenv_loaded:
         print(
-            "python-dotenv 모듈을 찾을 수 없어 .env 파일을 자동으로 로드하지 못했습니다. "
-            f"'pip install python-dotenv'로 모듈을 설치하거나 PLAYWRIGHT_CONNECT_URL 환경변수(예: {DEFAULT_CONNECT_URL})를 직접 지정하세요."
+            "python-dotenv 紐⑤뱢??李얠쓣 ???놁뼱 .env ?뚯씪???먮룞?쇰줈 濡쒕뱶?섏? 紐삵뻽?듬땲?? "
+            f"'pip install python-dotenv'濡?紐⑤뱢???ㅼ튂?섍굅??PLAYWRIGHT_CONNECT_URL ?섍꼍蹂???? {DEFAULT_CONNECT_URL})瑜?吏곸젒 吏?뺥븯?몄슂."
         )
 
 
 def verify_cdp_endpoint(url, timeout=5):
-    """사전 접속 여부 확인 (/json/version)."""
+    """?ъ쟾 ?묒냽 ?щ? ?뺤씤 (/json/version)."""
     probe_url = url.rstrip("/") + "/json/version"
     try:
-        # 일부 환경에서 Host 헤더가 localhost일 때만 응답하는 사례가 있어 설정
+        # ?쇰? ?섍꼍?먯꽌 Host ?ㅻ뜑媛 localhost???뚮쭔 ?묐떟?섎뒗 ?щ?媛 ?덉뼱 ?ㅼ젙
         response = requests.get(probe_url, timeout=timeout, headers={"Host": "localhost"})
         response.raise_for_status()
         return True
     except requests.RequestException as exc:
         print(
-            "Chrome 원격 디버깅 세션에 연결하지 못했습니다.\n"
-            f"확인 URL: {probe_url}\n"
-            "Chrome이 --remote-debugging-port=9222 옵션으로 실행 중인지, "
-            "WSL에서 해당 포트로 접근 가능한지 다시 확인해 주세요.\n"
-            f"상세 오류: {exc}"
+            "Chrome ?먭꺽 ?붾쾭源??몄뀡???곌껐?섏? 紐삵뻽?듬땲??\n"
+            f"?뺤씤 URL: {probe_url}\n"
+            "Chrome??--remote-debugging-port=9222 ?듭뀡?쇰줈 ?ㅽ뻾 以묒씤吏, "
+            "WSL?먯꽌 ?대떦 ?ы듃濡??묎렐 媛?ν븳吏 ?ㅼ떆 ?뺤씤??二쇱꽭??\n"
+            f"?곸꽭 ?ㅻ쪟: {exc}"
         )
         return False
 
@@ -273,24 +273,24 @@ DEBUG_DIR.mkdir(exist_ok=True)
 
 def maybe_launch_chrome_devtools():
     if FORCE_LOCAL_PLAYWRIGHT:
-        print("FORCE_LOCAL_PLAYWRIGHT=1 이므로 Chrome DevTools 자동 실행을 건너뜁니다.")
+        print("FORCE_LOCAL_PLAYWRIGHT=1 ?대?濡?Chrome DevTools ?먮룞 ?ㅽ뻾??嫄대꼫?곷땲??")
         return
     if CRAWLER_DRY_RUN:
-        print("CRAWLER_DRY_RUN=1 이므로 Chrome DevTools 자동 실행을 건너뜁니다.")
+        print("CRAWLER_DRY_RUN=1 ?대?濡?Chrome DevTools ?먮룞 ?ㅽ뻾??嫄대꼫?곷땲??")
         return
 
     if not AUTO_LAUNCH_CHROME_DEVTOOLS:
-        print("AUTO_LAUNCH_CHROME_DEVTOOLS=0 이므로 Chrome DevTools 자동 실행을 건너뜁니다.")
+        print("AUTO_LAUNCH_CHROME_DEVTOOLS=0 ?대?濡?Chrome DevTools ?먮룞 ?ㅽ뻾??嫄대꼫?곷땲??")
         return
 
     batch_path = SCRIPT_DIR / "start_chrome_dev.bat"
     if not batch_path.exists():
-        print(f"{batch_path} 파일을 찾을 수 없어 Chrome DevTools 자동 실행을 생략합니다.")
+        print(f"{batch_path} ?뚯씪??李얠쓣 ???놁뼱 Chrome DevTools ?먮룞 ?ㅽ뻾???앸왂?⑸땲??")
         return
 
     cmd_parts = locate_cmd_invocation()
     if cmd_parts is None:
-        print("cmd.exe 를 찾지 못해 Chrome DevTools 자동 실행을 생략합니다. Windows 환경에서 직접 배치파일을 실행해 주세요.")
+        print("cmd.exe 瑜?李얠? 紐삵빐 Chrome DevTools ?먮룞 ?ㅽ뻾???앸왂?⑸땲?? Windows ?섍꼍?먯꽌 吏곸젒 諛곗튂?뚯씪???ㅽ뻾??二쇱꽭??")
         return
 
     if os.name == "nt":
@@ -309,16 +309,16 @@ def maybe_launch_chrome_devtools():
             timeout=30,
         )
     except FileNotFoundError as exc:
-        print(f"Chrome DevTools 배치 실행 실패 (cmd.exe 미발견): {exc}")
+        print(f"Chrome DevTools 諛곗튂 ?ㅽ뻾 ?ㅽ뙣 (cmd.exe 誘몃컻寃?: {exc}")
     except PermissionError as exc:
         print(
-            "Chrome DevTools 배치 실행 권한 오류가 발생했습니다. "
-            "WSL interop 설정 또는 /mnt/c 드라이브 실행 권한을 확인하고 직접 배치파일을 실행해 주세요.\n"
-            f"상세: {exc}"
+            "Chrome DevTools 諛곗튂 ?ㅽ뻾 沅뚰븳 ?ㅻ쪟媛 諛쒖깮?덉뒿?덈떎. "
+            "WSL interop ?ㅼ젙 ?먮뒗 /mnt/c ?쒕씪?대툕 ?ㅽ뻾 沅뚰븳???뺤씤?섍퀬 吏곸젒 諛곗튂?뚯씪???ㅽ뻾??二쇱꽭??\n"
+            f"?곸꽭: {exc}"
         )
     except subprocess.CalledProcessError as exc:
         print(
-            "Chrome DevTools 배치 실행이 실패했습니다.\n"
+            "Chrome DevTools 諛곗튂 ?ㅽ뻾???ㅽ뙣?덉뒿?덈떎.\n"
             f"returncode: {exc.returncode}\n"
             f"stdout: {exc.stdout}\n"
             f"stderr: {exc.stderr}"
@@ -327,13 +327,13 @@ def maybe_launch_chrome_devtools():
         stdout = exc.stdout or ""
         stderr = exc.stderr or ""
         print(
-            "Chrome DevTools 배치 실행이 30초 안에 종료되지 않아 크롤러가 대기를 중단합니다. "
-            "Chrome 창이 이미 떠 있다면 그대로 진행합니다.\n"
+            "Chrome DevTools 諛곗튂 ?ㅽ뻾??30珥??덉뿉 醫낅즺?섏? ?딆븘 ?щ·?ш? ?湲곕? 以묐떒?⑸땲?? "
+            "Chrome 李쎌씠 ?대? ???덈떎硫?洹몃?濡?吏꾪뻾?⑸땲??\n"
             f"stdout: {stdout}\n"
             f"stderr: {stderr}"
         )
     except OSError as exc:
-        print(f"Chrome DevTools 배치 실행 중 알 수 없는 OS 오류가 발생했습니다: {exc}")
+        print(f"Chrome DevTools 諛곗튂 ?ㅽ뻾 以??????녿뒗 OS ?ㅻ쪟媛 諛쒖깮?덉뒿?덈떎: {exc}")
 
 
 def first_available(node, selectors):
@@ -373,7 +373,7 @@ def save_debug_snapshot(page, prefix):
 
 
 def extract_price_from_text(raw_text):
-    match = re.search(r"([\d,]+)\s*원", raw_text)
+    match = re.search(r"([\d,]+)\s*??, raw_text)
     if match:
         return match.group(1).replace("\u200b", "").strip()
     digits = re.sub(r"[^\d]", "", raw_text)
@@ -428,8 +428,8 @@ def product_list_crawl(context, df, read_excel_path, seen_urls):
     output_folder.mkdir(parents=True, exist_ok=True)
 
     pagination_button_labels = {
-        "next": ["다음", "다음 페이지", "다음페이지", ">"],
-        "prev": ["이전", "이전 페이지", "이전페이지", "<"]
+        "next": ["?ㅼ쓬", "?ㅼ쓬 ?섏씠吏", "?ㅼ쓬?섏씠吏", ">"],
+        "prev": ["?댁쟾", "?댁쟾 ?섏씠吏", "?댁쟾?섏씠吏", "<"]
     }
 
     def scroll_to_pagination():
@@ -460,9 +460,9 @@ def product_list_crawl(context, df, read_excel_path, seen_urls):
             match = re.search(r'\d+', text)
             if match:
                 return int(match.group())
-        print(f"현재 페이지 번호 탐색 실패 - URL: {page.url}")
+        print(f"?꾩옱 ?섏씠吏 踰덊샇 ?먯깋 ?ㅽ뙣 - URL: {page.url}")
         try:
-            print("aria-current 후보:", page.locator('[aria-current]').all_inner_texts())
+            print("aria-current ?꾨낫:", page.locator('[aria-current]').all_inner_texts())
         except Exception:
             pass
         return None
@@ -514,7 +514,7 @@ def product_list_crawl(context, df, read_excel_path, seen_urls):
             current_page_num = get_current_page_number()
 
             if current_page_num == target_page:
-                print(f"페이지 {target_page}에 이미 위치해 있습니다.")
+                print(f"?섏씠吏 {target_page}???대? ?꾩튂???덉뒿?덈떎.")
                 return True
 
             page_link = find_page_link(target_page)
@@ -528,22 +528,22 @@ def product_list_crawl(context, df, read_excel_path, seen_urls):
                 page.wait_for_load_state("networkidle")
                 time.sleep(1)
                 if get_current_page_number() == target_page:
-                    print(f"페이지 {target_page}로 이동 완료, 현재 URL: {page.url}")
+                    print(f"?섏씠吏 {target_page}濡??대룞 ?꾨즺, ?꾩옱 URL: {page.url}")
                     return True
                 continue
 
             if current_page_num is None:
-                print("현재 페이지 번호를 확인할 수 없어 다시 시도합니다.")
+                print("?꾩옱 ?섏씠吏 踰덊샇瑜??뺤씤?????놁뼱 ?ㅼ떆 ?쒕룄?⑸땲??")
                 page.wait_for_timeout(1000)
                 continue
 
             direction = "next" if target_page > current_page_num else "prev"
-            print(f"페이지 {target_page} 이동을 위해 {direction} 버튼 클릭 시도 (현재 {current_page_num}).")
+            print(f"?섏씠吏 {target_page} ?대룞???꾪빐 {direction} 踰꾪듉 ?대┃ ?쒕룄 (?꾩옱 {current_page_num}).")
             if not click_pagination_control(direction):
-                print(f"{direction} 버튼을 찾을 수 없습니다.")
+                print(f"{direction} 踰꾪듉??李얠쓣 ???놁뒿?덈떎.")
                 return False
 
-        print(f"페이지 {target_page} 이동 시도가 {max_attempts}회 초과로 실패했습니다.")
+        print(f"?섏씠吏 {target_page} ?대룞 ?쒕룄媛 {max_attempts}??珥덇낵濡??ㅽ뙣?덉뒿?덈떎.")
         return False
 
     for start_page in range(global_start_page, global_last_page + 1, 10):
@@ -552,12 +552,12 @@ def product_list_crawl(context, df, read_excel_path, seen_urls):
         shutil.copy(read_excel_path, write_excel_path)
 
         if not go_to_page_number(start_page):
-            print(f"페이지 {start_page} 이동에 실패했습니다. 다음 그룹으로 넘어갑니다.")
+            print(f"?섏씠吏 {start_page} ?대룞???ㅽ뙣?덉뒿?덈떎. ?ㅼ쓬 洹몃９?쇰줈 ?섏뼱媛묐땲??")
             continue
 
         for page_number in range(start_page, last_page + 1):
             if not go_to_page_number(page_number):
-                print(f"페이지 {page_number} 이동에 실패하여 건너뜁니다.")
+                print(f"?섏씠吏 {page_number} ?대룞???ㅽ뙣?섏뿬 嫄대꼫?곷땲??")
                 continue
             df, _ = crawl_page(page, df, seen_urls)
             print(f"Completed page {page_number}")
@@ -590,14 +590,14 @@ def find_content_element(page, product_code):
             print(f"Using content selector '{selector}' for {product_code}")
             return selector
 
-    print("상품 상세 컨텐츠 영역을 찾지 못했습니다. 스냅샷 저장 후 None 반환")
+    print("?곹뭹 ?곸꽭 而⑦뀗痢??곸뿭??李얠? 紐삵뻽?듬땲?? ?ㅻ깄???????None 諛섑솚")
     save_debug_snapshot(page, f"content_{product_code}")
     return None  # If the element is not found, return None
 
 
 def crawl_page(page, df, seen_urls):
     time.sleep(1)
-    page.wait_for_load_state("networkidle")  # 페이지 로딩이 완료될 때까지 기다립니다.
+    page.wait_for_load_state("networkidle")  # ?섏씠吏 濡쒕뵫???꾨즺???뚭퉴吏 湲곕떎由쎈땲??
     products = find_elements(
         page,
         [
@@ -607,17 +607,17 @@ def crawl_page(page, df, seen_urls):
         ],
     )
     if not products:
-        print("상품 리스트 셀렉터가 모두 실패했습니다. HTML 스냅샷을 저장합니다.")
+        print("?곹뭹 由ъ뒪????됲꽣媛 紐⑤몢 ?ㅽ뙣?덉뒿?덈떎. HTML ?ㅻ깄?룹쓣 ??ν빀?덈떎.")
         save_debug_snapshot(page, "product_list")
     duplicate_detected = False
 
     for i, product in enumerate(products):
-        # if i >= 5:  # 세 개의 상품만 크롤링하고 루프를 중단합니다.
+        # if i >= 5:  # ??媛쒖쓽 ?곹뭹留??щ·留곹븯怨?猷⑦봽瑜?以묐떒?⑸땲??
         #     break
 
         product_data = get_product_data(page, product, i, len(products))
 
-        # get_product_data가 None을 반환하면 해당 제품을 건너뜁니다.
+        # get_product_data媛 None??諛섑솚?섎㈃ ?대떦 ?쒗뭹??嫄대꼫?곷땲??
         if product_data is None:
             print(f"Skipping product at index {i} as get_product_data returned None.")
             continue
@@ -625,7 +625,7 @@ def crawl_page(page, df, seen_urls):
         product_url = product_data['Product_URL'][0]
 
         if product_url == "N/A" or not product_url:
-            print("상품 URL 추출 실패로 항목을 건너뜁니다.")
+            print("?곹뭹 URL 異붿텧 ?ㅽ뙣濡???ぉ??嫄대꼫?곷땲??")
             continue
 
         if product_url in seen_urls:
@@ -664,8 +664,8 @@ def extract_product_details(product):
         product,
         [
             "[data-testid='PRODUCT_CARD_PRICE']",
-            "span:has-text('원')",
-            "strong span:has-text('원')",
+            "span:has-text('??)",
+            "strong span:has-text('??)",
             "span._2DywKu0J_8",
         ],
     )
@@ -697,13 +697,13 @@ def extract_product_details(product):
 
 
 def original_shipping_fee(page):
-    print(f"Current page URL: {page.url}")  # 현재 페이지 URL 출력
+    print(f"Current page URL: {page.url}")  # ?꾩옱 ?섏씠吏 URL 異쒕젰
 
     shipping_selectors = [
-        "xpath=//*[contains(@class,'delivery') and contains(text(),'원')]",
-        "xpath=//span[contains(text(),'배송비')]/following-sibling::*[1]",
-        "xpath=//*[contains(text(),'배송비') and contains(text(),'원')]",
-        "xpath=//*[contains(text(),'반품배송비') and contains(text(),'원')]",
+        "xpath=//*[contains(@class,'delivery') and contains(text(),'??)]",
+        "xpath=//span[contains(text(),'諛곗넚鍮?)]/following-sibling::*[1]",
+        "xpath=//*[contains(text(),'諛곗넚鍮?) and contains(text(),'??)]",
+        "xpath=//*[contains(text(),'諛섑뭹諛곗넚鍮?) and contains(text(),'??)]",
     ]
 
     for selector in shipping_selectors:
@@ -711,13 +711,13 @@ def original_shipping_fee(page):
         if not element:
             continue
         element_text = element.inner_text().strip()
-        if "무료배송" in element_text:
-            print("배송비: 무료배송")
+        if "臾대즺諛곗넚" in element_text:
+            print("諛곗넚鍮? 臾대즺諛곗넚")
             return "0"
         digits = re.findall(r"[\d,]+", element_text)
         if digits:
             value = digits[0].replace(",", "")
-            print(f"배송비: {value}")
+            print(f"諛곗넚鍮? {value}")
             return value
 
     body_text = ""
@@ -726,18 +726,18 @@ def original_shipping_fee(page):
     except Exception:
         pass
 
-    if "무료배송" in body_text:
-        print("배송비: 무료배송(본문 탐지)")
+    if "臾대즺諛곗넚" in body_text:
+        print("諛곗넚鍮? 臾대즺諛곗넚(蹂몃Ц ?먯?)")
         return "0"
 
-    for pattern in [r"배송비\s*[:：]?\s*([\d,]+)\s*원", r"반품배송비\s*[:：]?\s*([\d,]+)\s*원"]:
+    for pattern in [r"諛곗넚鍮?s*[:竊??\s*([\d,]+)\s*??, r"諛섑뭹諛곗넚鍮?s*[:竊??\s*([\d,]+)\s*??]:
         match = re.search(pattern, body_text)
         if match:
             value = match.group(1).replace(",", "")
-            print(f"배송비(본문 탐지): {value}")
+            print(f"諛곗넚鍮?蹂몃Ц ?먯?): {value}")
             return value
 
-    print("Shipping fee element not found, 저장 후 N/A 반환")
+    print("Shipping fee element not found, ?????N/A 諛섑솚")
     save_debug_snapshot(page, "shipping_fee")
     return "N/A"
 
@@ -751,7 +751,7 @@ def option_crawl(page):
             'a[role="button"][aria-haspopup="listbox"], button[aria-haspopup="listbox"]'
         )
         if option_triggers:
-            print("Fallback option selector 사용 (listbox 버튼 기반)")
+            print("Fallback option selector ?ъ슜 (listbox 踰꾪듉 湲곕컲)")
 
     option_index = 0
     while True:
@@ -770,50 +770,56 @@ def option_crawl(page):
 
         option_index += 1
         category = trigger.get_attribute("aria-label") or trigger.inner_text().strip()
-        if not category or category in {"선택", ""}:
-            category = f"옵션{option_index}"
+        if not category or category in {"?좏깮", ""}:
+            category = f"?듭뀡{option_index}"
 
         try:
             trigger.click()
         except PlaywrightTimeoutError:
-            print(f"{category} 클릭 실패")
+            print(f"{category} ?대┃ ?ㅽ뙣")
             continue
 
         try:
             dropdown = page.wait_for_selector("ul[role=\"listbox\"]", timeout=15000)
         except PlaywrightTimeoutError:
-            print(f"{category} 옵션 리스트 로드 실패")
+            print(f"{category} ?듭뀡 由ъ뒪??濡쒕뱶 ?ㅽ뙣")
             continue
 
         items = dropdown.query_selector_all("[role='option'], a, li")
         current_options = []
         current_prices = []
+        seen_names = set()
 
         for item in items:
             option_text = item.inner_text().strip()
             if not option_text:
                 continue
-            price_match = re.search(r'\(([+\-]?[\d,]+)원\)', option_text)
+            price_match = re.search(r'\(([+\-]?[\d,]+)??)', option_text)
             if price_match:
                 price_value = int(price_match.group(1).replace(',', ''))
-                name = re.sub(r'\(([+\-]?[\d,]+)원\)', '', option_text).strip()
+                name = re.sub(r'\(([+\-]?[\d,]+)??)', '', option_text).strip()
             else:
                 price_value = 0
                 name = option_text
 
-            current_options.append(name)
+            # De-duplicate by normalized visible text to prevent double capture
+            name_norm = re.sub(r"\s+", " ", name)
+            if name_norm in seen_names:
+                continue
+            seen_names.add(name_norm)
+            current_options.append(name_norm)
             current_prices.append(price_value)
 
         if not current_options:
-            print(f"{category} 옵션 정보를 찾지 못했습니다.")
+            print(f"{category} ?듭뀡 ?뺣낫瑜?李얠? 紐삵뻽?듬땲??")
             continue
 
         option_data[category] = {
-            '하위옵션제목': current_options,
-            '하위옵션가격': current_prices,
+            '?섏쐞?듭뀡?쒕ぉ': current_options,
+            '?섏쐞?듭뀡媛寃?: current_prices,
         }
 
-        # 임의 옵션을 선택해 다음 단계 진행
+        # ?꾩쓽 ?듭뀡???좏깮???ㅼ쓬 ?④퀎 吏꾪뻾
         selectable = []
         for item in items:
             try:
@@ -834,16 +840,16 @@ def image_crawl(page):
     main_candidates = find_elements(
         page,
         [
-            "img[alt='대표이미지']",
-            "img[alt*='대표'][src*='shop-phinf']",
+            "img[alt='??쒖씠誘몄?']",
+            "img[alt*='???][src*='shop-phinf']",
             "div[id='content'] img[src*='shop-phinf']",
         ],
     )
     thumbnail_elements = find_elements(
         page,
         [
-            "img[alt^='추가이미지']",
-            "button[aria-label^='썸네일'] img",
+            "img[alt^='異붽??대?吏']",
+            "button[aria-label^='?몃꽕??] img",
             "ul[class*='thumbnail'] img",
         ],
     )
@@ -916,22 +922,22 @@ def content_crawl(page, product_code, element_selector):
     time.sleep(1)
     page.wait_for_load_state("load")
 
-    # element_selector가 유효한지 확인
+    # element_selector媛 ?좏슚?쒖? ?뺤씤
     if not element_selector:
         print("Invalid element selector. Moving to the next item.")
         return None
 
     element = page.query_selector(element_selector)
     if element is None:
-        # element_selector는 유효하지만, 해당 요소를 찾지 못한 경우
+        # element_selector???좏슚?섏?留? ?대떦 ?붿냼瑜?李얠? 紐삵븳 寃쎌슦
         print("No valid element found for the selector. Moving to the next item.")
         return None
 
     content = element.inner_html()
     soup = BeautifulSoup(content, 'html.parser')
 
-    if '계속됩니다' in soup.get_text():
-        print("found 계속됩니다")
+    if '怨꾩냽?⑸땲?? in soup.get_text():
+        print("found 怨꾩냽?⑸땲??)
         return None
 
     css_link = soup.new_tag("link", rel="stylesheet",
@@ -973,13 +979,13 @@ def content_crawl(page, product_code, element_selector):
                 src = data_src
                 img['src'] = src
                 del img['data-src']
-            # #특정 태그 안에 쿠대 이미지 제거
+            # #?뱀젙 ?쒓렇 ?덉뿉 荑좊? ?대?吏 ?쒓굅
             # if src.startswith('https://rapid-up.s3.ap-northeast-2.amazonaws.com'):
             #     img.decompose()
             # elif not src.startswith(('https://cdn.011st.com', 'https://img.alicdn.com')):
             #     new_src = upload_to_oracle_cloud(src)
             #     img['src'] = new_src
-    #모든 쿠대 이미지 제거
+    #紐⑤뱺 荑좊? ?대?吏 ?쒓굅
     for img in soup.find_all('img'):
         src = img.get('src', '')
         if src.startswith(('https://rapid-up.s3.ap-northeast-2.amazonaws.com', 'https://cdn.heyseller.kr', 'https://ai.esmplus.com/')):
@@ -988,32 +994,32 @@ def content_crawl(page, product_code, element_selector):
     # img_tags = soup.find_all('img')
     # print(f"Number of images before: {len(img_tags)}")
     #
-    # # 제거되는 이미지의 src 속성 확인
+    # # ?쒓굅?섎뒗 ?대?吏??src ?띿꽦 ?뺤씤
     # img_tags = soup.find_all('img')
     # print(f"Number of images before: {len(img_tags)}")
     #
-    # # 제거되는 이미지의 src 속성 확인
+    # # ?쒓굅?섎뒗 ?대?吏??src ?띿꽦 ?뺤씤
     # if len(img_tags) > 0:
     #     print(f"First image src before removal: {img_tags[0].get('src', 'No src attribute')}")
     # if len(img_tags) > 1:
     #     print(f"Last image src before removal: {img_tags[-1].get('src', 'No src attribute')}")
 
-    # # 첫 번째와 마지막 이미지 제거
+    # # 泥?踰덉㎏? 留덉?留??대?吏 ?쒓굅
     # if len(img_tags) > 3:
     #     img_tags[0].decompose()
-    #     img_tags = soup.find_all('img')  # 리스트 업데이트
+    #     img_tags = soup.find_all('img')  # 由ъ뒪???낅뜲?댄듃
     #     img_tags[-1].decompose()
     # elif len(img_tags) > 1:
     #     img_tags[0].decompose()
-    #     img_tags = soup.find_all('img')  # 리스트 업데이트
+    #     img_tags = soup.find_all('img')  # 由ъ뒪???낅뜲?댄듃
     #     img_tags[-1].decompose()
 
-    # # 'heyseller'를 포함하는 이미지 제거
-    # for img in img_tags[:]:  # 복사본을 순회하여 원본 리스트를 수정
+    # # 'heyseller'瑜??ы븿?섎뒗 ?대?吏 ?쒓굅
+    # for img in img_tags[:]:  # 蹂듭궗蹂몄쓣 ?쒗쉶?섏뿬 ?먮낯 由ъ뒪?몃? ?섏젙
     #     if img and img.attrs and 'heyseller' in img.get('src', ''):
     #         img.decompose()
 
-    img_tags = soup.find_all('img')  # 최종 이미지 태그 리스트 업데이트
+    img_tags = soup.find_all('img')  # 理쒖쥌 ?대?吏 ?쒓렇 由ъ뒪???낅뜲?댄듃
     print(f"Number of images after all removals: {len(img_tags)}")
 
     soup = insert_and_remove_images(soup)
@@ -1073,15 +1079,15 @@ def return_shipping_fee(total_price):
 
 
 def title_edit(title):
-    # 중복 단어 제거
+    # 以묐났 ?⑥뼱 ?쒓굅
     title_split = title.split(' ')
-    title_split = list(dict.fromkeys(title_split))  # 중복 제거
+    title_split = list(dict.fromkeys(title_split))  # 以묐났 ?쒓굅
 
-    # 마지막 단어와 마지막에서 두 번째 단어 교체
+    # 留덉?留??⑥뼱? 留덉?留됱뿉????踰덉㎏ ?⑥뼱 援먯껜
     if len(title_split) >= 2:
         title_split[-1], title_split[-2] = title_split[-2], title_split[-1]
 
-    # 다시 문자열로 조합
+    # ?ㅼ떆 臾몄옄?대줈 議고빀
     title = ' '.join(title_split)
     return title
 
@@ -1089,7 +1095,7 @@ def title_edit(title):
 def get_product_data(page, product, i, num_products):
     title, price, product_url, product_code = extract_product_details(product)
     
-    # 문자열 처리 방식 적용
+    # 臾몄옄??泥섎━ 諛⑹떇 ?곸슜
     title = title.replace('\xa0', ' ')
     
     
@@ -1130,7 +1136,7 @@ def get_product_data(page, product, i, num_products):
         small_category = category_list[2].strip() if len(category_list) > 2 else None
         tiny_category = category_list[3].strip() if len(category_list) > 3 else None
     else:
-        # 'category'가 None인 경우, 모든 카테고리 관련 변수들을 None으로 설정
+        # 'category'媛 None??寃쎌슦, 紐⑤뱺 移댄뀒怨좊━ 愿??蹂?섎뱾??None?쇰줈 ?ㅼ젙
         category_list = []
         large_category = None
         medium_category = None
@@ -1147,7 +1153,7 @@ def get_product_data(page, product, i, num_products):
         smallest_category_type = 'small'
         naver_category_number = small_category_dict.get(small_category)
     else:
-        # tiny_category 및 small_category가 모두 None인 경우
+        # tiny_category 諛?small_category媛 紐⑤몢 None??寃쎌슦
         smallest_category = None
         smallest_category_type = None
         naver_category_number = None
@@ -1168,7 +1174,7 @@ def get_product_data(page, product, i, num_products):
     if common_urls:
         main_image = common_urls[0].replace('?type=m510', '')
         other_images = [url.replace('?type=m510', '') for url in common_urls[1:]]
-        print(f"other_images: {other_images}")  # other_images 출력
+        print(f"other_images: {other_images}")  # other_images 異쒕젰
     else:
         print("No common images found")
         try:
@@ -1238,7 +1244,7 @@ def write_to_excel(df, excel_path, seen_urls):
     import pandas as pd
 
     book = load_workbook(excel_path)
-    sheet = book['일괄등록']
+    sheet = book['?쇨큵?깅줉']
 
     b_start_row = c_start_row = e_start_row = h_start_row = ad_start_row = r_start_row = s_start_row = t_start_row = i_start_row = 3
     ap_start_row = aq_start_row = 3
@@ -1254,14 +1260,14 @@ def write_to_excel(df, excel_path, seen_urls):
         sheet['E' + str(k)] = selling_price_rounded
 
     for l, item in enumerate(df.iterrows(), start=h_start_row):
-        sheet['H' + str(l)] = "조합형"
+        sheet['H' + str(l)] = "議고빀??
     for m in range(ad_start_row, ad_start_row + len(df)):
         selling_price_rounded = sheet['E' + str(m)].value
 
 
 
 
-###########바젤마켓
+###########諛붿젮留덉폆
         if selling_price_rounded <= 20000:
             ad_value = 2903608
         elif 20001 <= selling_price_rounded <= 30000:
@@ -1290,12 +1296,12 @@ def write_to_excel(df, excel_path, seen_urls):
 
 
     for row, _ in enumerate(df.iterrows(), start=h_start_row):
-        sheet['U' + str(row)] = "상세페이지 참조"
-        sheet['V' + str(row)] = "상세페이지 참조"
+        sheet['U' + str(row)] = "?곸꽭?섏씠吏 李몄“"
+        sheet['V' + str(row)] = "?곸꽭?섏씠吏 李몄“"
         sheet['Y' + str(row)] = "0200037"
-        sheet['Z' + str(row)] = "구매대행"
+        sheet['Z' + str(row)] = "援щℓ???
         sheet['AZ' + str(row)] = "010-3973-3119"
-        sheet['BA' + str(row)] = "본문 안내문 참조"
+        sheet['BA' + str(row)] = "蹂몃Ц ?덈궡臾?李몄“"
 
     for l, item in enumerate(df['Options'], start=r_start_row):
         option_titles = []
@@ -1303,34 +1309,34 @@ def write_to_excel(df, excel_path, seen_urls):
         option_categories = []
         for index, key in enumerate(item):
             option_categories.append(key)
-            if '하위옵션제목' in item[key]:
-                option_titles.append(', '.join(item[key]['하위옵션제목']))
-            if '하위옵션가격' in item[key]:
-                option_prices.append(', '.join(map(str, item[key]['하위옵션가격'])))
+            if '?섏쐞?듭뀡?쒕ぉ' in item[key]:
+                option_titles.append(', '.join(item[key]['?섏쐞?듭뀡?쒕ぉ']))
+            if '?섏쐞?듭뀡媛寃? in item[key]:
+                option_prices.append(', '.join(map(str, item[key]['?섏쐞?듭뀡媛寃?])))
         sheet['I' + str(l)] = '\n'.join(option_categories)
         sheet['J' + str(l)] = '\n'.join(option_titles)
         sheet['K' + str(l)] = '\n'.join(option_prices)
 
-    # 'K' 열 값을 기반으로 'L' 열 값을 업데이트하는 부분
+    # 'K' ??媛믪쓣 湲곕컲?쇰줈 'L' ??媛믪쓣 ?낅뜲?댄듃?섎뒗 遺遺?
     if 'Options' in df.columns:
         for row in range(h_start_row, h_start_row + len(df)):
             item_options = df.at[row - h_start_row, 'Options']
             option_prices = []
             for option in item_options.values():
-                if '하위옵션가격' in option:
-                    option_prices.extend(option['하위옵션가격'])
+                if '?섏쐞?듭뀡媛寃? in option:
+                    option_prices.extend(option['?섏쐞?듭뀡媛寃?])
 
             if option_prices:
                 num_prices = len(option_prices)
                 l_values = ', '.join(['99'] * num_prices)
                 sheet['L' + str(row)] = l_values
             else:
-                # 옵션 가격이 없는 경우, 'L' 열을 비워 두거나 기본값을 설정
-                sheet['L' + str(row)] = "99"  # 또는 "기본값"
+                # ?듭뀡 媛寃⑹씠 ?녿뒗 寃쎌슦, 'L' ?댁쓣 鍮꾩썙 ?먭굅??湲곕낯媛믪쓣 ?ㅼ젙
+                sheet['L' + str(row)] = "99"  # ?먮뒗 "湲곕낯媛?
     else:
         for row in range(h_start_row, h_start_row + len(df)):
-            # 'Options' 열이 없는 경우, 'L' 열을 비워 두거나 기본값을 설정
-            sheet['L' + str(row)] = "99"  # 또는 "기본값"
+            # 'Options' ?댁씠 ?녿뒗 寃쎌슦, 'L' ?댁쓣 鍮꾩썙 ?먭굅??湲곕낯媛믪쓣 ?ㅼ젙
+            sheet['L' + str(row)] = "99"  # ?먮뒗 "湲곕낯媛?
 
 
 
@@ -1342,14 +1348,14 @@ def write_to_excel(df, excel_path, seen_urls):
         else:
             sheet['S' + str(o)] = ""
 
-    # 'Content' 열의 존재 여부를 확인하고 처리
+    # 'Content' ?댁쓽 議댁옱 ?щ?瑜??뺤씤?섍퀬 泥섎━
     if 'Content' in df.columns:
         for p, item in enumerate(df['Content'], start=t_start_row):
             if isinstance(item, float):
                 item = str(item)
             print(f"Row {p}, Content: {item[:100]}")
 
-            # 데이터 엑셀 파일에 기록
+            # ?곗씠???묒? ?뚯씪??湲곕줉
             sheet['T' + str(p)] = item
     else:
         print("No 'Content' column found in DataFrame")
@@ -1372,7 +1378,7 @@ def write_to_excel(df, excel_path, seen_urls):
 
     # Here we load the workbook again
     book = load_workbook(excel_path)
-    sheet = book['일괄등록']
+    sheet = book['?쇨큵?깅줉']
 
     for i in range(3, sheet.max_row + 1):
         if not sheet['A' + str(i)].value:
@@ -1393,7 +1399,7 @@ def write_to_excel2(df, excel_path2):
         'Numbering': range(1, len(df) + 1),
         'Product_Title': df['Product'],
         'Product_Price': df['Price'],
-        'Shipping_Fee': df['Shipping_Fee']  # 추가된 배송비 항목
+        'Shipping_Fee': df['Shipping_Fee']  # 異붽???諛곗넚鍮???ぉ
     })
     with pd.ExcelWriter(excel_path2) as writer:
         df2.to_excel(writer, index=False)
@@ -1410,7 +1416,7 @@ def write_to_excel2(df, excel_path2):
 maybe_launch_chrome_devtools()
 
 if CRAWLER_DRY_RUN:
-    print("CRAWLER_DRY_RUN=1 플래그로 인해 Playwright 크롤링 본동작을 생략합니다.")
+    print("CRAWLER_DRY_RUN=1 ?뚮옒洹몃줈 ?명빐 Playwright ?щ·留?蹂몃룞?묒쓣 ?앸왂?⑸땲??")
     sys.stdout = original
     f.close()
     sys.exit(0)
@@ -1427,9 +1433,9 @@ with sync_playwright() as p:
         sanitized_url = normalize_cdp_url(connect_url_env)
         if sanitized_url and sanitized_url != connect_url_env.strip():
             print(
-                "PLAYWRIGHT_CONNECT_URL 값을 HTTP(S) CDP 루트 URL로 정규화했습니다.\n"
-                f"입력값: {connect_url_env}\n"
-                f"적용값: {sanitized_url}"
+                "PLAYWRIGHT_CONNECT_URL 媛믪쓣 HTTP(S) CDP 猷⑦듃 URL濡??뺢퇋?뷀뻽?듬땲??\n"
+                f"?낅젰媛? {connect_url_env}\n"
+                f"?곸슜媛? {sanitized_url}"
             )
         connect_url = sanitized_url
         connect_url_source = "env"
@@ -1452,20 +1458,20 @@ with sync_playwright() as p:
             "--disable-accelerated-2d-canvas",
             "--disable-gpu",
             "--no-zygote",
-            # '--single-process' 옵션은 일부 WSL/컨테이너 환경에서 sandbox_host 오류를 유발하므로 제외한다.
+            # '--single-process' ?듭뀡? ?쇰? WSL/而⑦뀒?대꼫 ?섍꼍?먯꽌 sandbox_host ?ㅻ쪟瑜??좊컻?섎?濡??쒖쇅?쒕떎.
         ]
 
         if FORCE_LOCAL_PLAYWRIGHT:
-            connect_url = None  # 강제 로컬 실행
+            connect_url = None  # 媛뺤젣 濡쒖뺄 ?ㅽ뻾
             should_close_browser = True
-            print("FORCE_LOCAL_PLAYWRIGHT=1: CDP 연결을 생략하고 로컬 Chromium을 실행합니다.")
+            print("FORCE_LOCAL_PLAYWRIGHT=1: CDP ?곌껐???앸왂?섍퀬 濡쒖뺄 Chromium???ㅽ뻾?⑸땲??")
 
         if connect_url:
-            # 1차 연결 시도: 환경변수 또는 기본값
+            # 1李??곌껐 ?쒕룄: ?섍꼍蹂???먮뒗 湲곕낯媛?
             ok = verify_cdp_endpoint(connect_url)
             original_url = connect_url
             if not ok and running_on_wsl():
-                # WSL에서 127.0.0.1/localhost를 사용 중이면 Windows 호스트 IP로 자동 대체 재시도
+                # WSL?먯꽌 127.0.0.1/localhost瑜??ъ슜 以묒씠硫?Windows ?몄뒪??IP濡??먮룞 ?泥??ъ떆??
                 parts = urlsplit(connect_url)
                 host = parts.hostname or "127.0.0.1"
                 port = parts.port or DEFAULT_CDP_PORT
@@ -1474,15 +1480,15 @@ with sync_playwright() as p:
                     if alt_host:
                         alt_url = urlunsplit((parts.scheme, f"{alt_host}:{port}", "", "", ""))
                         print(
-                            "WSL 환경에서 127.0.0.1 대신 Windows 호스트 IP로 재시도합니다.\n"
-                            f"대상: {alt_url}"
+                            "WSL ?섍꼍?먯꽌 127.0.0.1 ???Windows ?몄뒪??IP濡??ъ떆?꾪빀?덈떎.\n"
+                            f"??? {alt_url}"
                         )
                         if verify_cdp_endpoint(alt_url):
                             connect_url = alt_url
                             ok = True
                             connect_url_source = (connect_url_source or "env") + " (WSL fallback)"
                         else:
-                            # 최후의 수단: Windows curl을 통해 ws endpoint 조회 후 교체 시도
+                            # 理쒗썑???섎떒: Windows curl???듯빐 ws endpoint 議고쉶 ??援먯껜 ?쒕룄
                             cmd_parts = locate_cmd_invocation()
                             if cmd_parts is not None:
                                 try:
@@ -1500,7 +1506,7 @@ with sync_playwright() as p:
                                         ws = data.get("webSocketDebuggerUrl")
                                         if isinstance(ws, str) and ws:
                                             ws_parts = urlsplit(ws)
-                                            # localhost를 실제 호스트로 치환
+                                            # localhost瑜??ㅼ젣 ?몄뒪?몃줈 移섑솚
                                             ws_url = urlunsplit((
                                                 "ws" if ws_parts.scheme.startswith("ws") else "ws",
                                                 f"{alt_host}:{port}",
@@ -1514,19 +1520,19 @@ with sync_playwright() as p:
                                 except Exception:
                                     pass
             if not ok and running_on_wsl():
-                # 추가 시도: 혹시 Windows가 아닌 WSL 내부 Chrome이 떠있는 경우 127.0.0.1로도 다시 시도
+                # 異붽? ?쒕룄: ?뱀떆 Windows媛 ?꾨땶 WSL ?대? Chrome???좎엳??寃쎌슦 127.0.0.1濡쒕룄 ?ㅼ떆 ?쒕룄
                 parts = urlsplit(original_url)
                 port = parts.port or DEFAULT_CDP_PORT
                 local_url = urlunsplit((parts.scheme, f"127.0.0.1:{port}", "", "", ""))
                 if local_url != original_url:
-                    print(f"추가 로컬 재시도: {local_url}")
+                    print(f"異붽? 濡쒖뺄 ?ъ떆?? {local_url}")
                     if verify_cdp_endpoint(local_url):
                         connect_url = local_url
                         ok = True
                         connect_url_source = (connect_url_source or "env") + " (local retry)"
 
             if not ok and running_on_wsl():
-                # 최종 WSL 전용 ws 엔드포인트 대체 시도 (호스트 종류 무관)
+                # 理쒖쥌 WSL ?꾩슜 ws ?붾뱶?ъ씤???泥??쒕룄 (?몄뒪??醫낅쪟 臾닿?)
                 parts_any = urlsplit(original_url)
                 port_any = parts_any.port or DEFAULT_CDP_PORT
                 alt_host_any = detect_windows_host_from_wsl() or (parts_any.hostname or DEFAULT_CDP_HOST)
@@ -1562,19 +1568,19 @@ with sync_playwright() as p:
 
             if not ok:
                 if REQUIRE_CDP_CONNECTION:
-                    print(f"CDP 연결 확인에 실패했습니다. URL: {original_url}")
+                    print(f"CDP ?곌껐 ?뺤씤???ㅽ뙣?덉뒿?덈떎. URL: {original_url}")
                     sys.exit(1)
                 print(
-                    "CDP 연결 확인에 실패하여 로컬 Chromium 실행으로 대체합니다. "
-                    "Chrome DevTools 배치 실행 상태와 포트/주소를 확인하세요."
+                    "CDP ?곌껐 ?뺤씤???ㅽ뙣?섏뿬 濡쒖뺄 Chromium ?ㅽ뻾?쇰줈 ?泥댄빀?덈떎. "
+                    "Chrome DevTools 諛곗튂 ?ㅽ뻾 ?곹깭? ?ы듃/二쇱냼瑜??뺤씤?섏꽭??"
                 )
                 connect_url = None
                 connect_url_source = None
             else:
                 if connect_url_source == "env":
-                    print(f"환경변수 PLAYWRIGHT_CONNECT_URL ({connect_url})에 연결합니다.")
+                    print(f"?섍꼍蹂??PLAYWRIGHT_CONNECT_URL ({connect_url})???곌껐?⑸땲??")
                 elif connect_url_source == "default":
-                    print(f"기본 Chrome DevTools 엔드포인트({connect_url})에 연결합니다.")
+                    print(f"湲곕낯 Chrome DevTools ?붾뱶?ъ씤??{connect_url})???곌껐?⑸땲??")
 
         should_close_browser = connect_url is None
 

@@ -11,7 +11,7 @@ Product 1/20: 치공기 치아 조각 연마 기계 보석 폴리셔 소형 치�
 Category: 생활/건강>공구>절삭공구>각도/고속절단기
 Smallest Category('tiny') : 각도/고속절단기, Naver category number: 50003418
 옵션2 클릭 실패
-Options: {'옵션1': {'하위옵션제목': ['업그레이드된150와트호스트+2.35핸들페달없음', '업그레이드된150와트호스트+2.35핸들페달없음', '업그레이드된150와트호스트+2.35핸들+페달', '업그레이드된150와트호스트+2.35핸들+페달', '150와트호스트+범용핸들(페달은포함되지않음)', '150와트호스트+범용핸들(페달은포함되지않음)', '업그레이드된150와트호스트+범용핸들+페달', '업그레이드된150와트호스트+범용핸들+페달', '150와트+옥조각패키지로업그레이드', '150와트+옥조각패키지로업그레이드', '150와트+핵조각패키지로업그레이드', '150와트+핵조각패키지로업그레이드', '150와트+나무조각패키지로업그레이드', '150와트+나무조각패키지로업그레이드'], '하위옵션가격': [0, 0, 16000, 16000, 12800, 12800, 19100, 19100, 35700, 35700, 35700, 35700, 41500, 41500]}}
+Options: {'옵션1': {'하위옵션제목': ['업그레이드된150와트호스트+2.35핸들페달없음', '업그레이드된150와트호스트+2.35핸들+페달', '150와트호스트+범용핸들(페달은포함되지않음)', '업그레이드된150와트호스트+범용핸들+페달', '150와트+옥조각패키지로업그레이드', '150와트+핵조각패키지로업그레이드', '150와트+나무조각패키지로업그레이드'], '하위옵션가격': [0, 16000, 12800, 19100, 35700, 35700, 41500]}}
 Price fallback via option_list: 12,800
 Selector 'img[alt='대표이미지']' matched 2 elements.
 Selector 'img[alt^='추가이미지']' matched 2 elements.
@@ -25,9 +25,10 @@ https://shop-phinf.pstatic.net/20240215_23/17080080908117Kvks_JPEG/2609000903421
 [CONTENT][9956000679] Trying selector: #INTRODUCE > div > div.LXGzUhHJC2.EtTm8LLHdw > div > div > div > div > div > div > div
 Using content selector '#INTRODUCE > div > div.LXGzUhHJC2.EtTm8LLHdw > div > div > div > div > div > div > div' for 9956000679
 [CONTENT][9956000679] Removed 19 blob media blocks, simplified 0 playable videos.
+[CONTENT][9956000679] DOM cleanup completed.
 [CONTENT][9956000679] Removed 29 extra DOM nodes during cleanup.
 [CONTENT][9956000679] Images after cleanup: 21
-[CONTENT][9956000679] Saved content output (cleaned): C:\dev_win\naver_crawler\debug\content_outputs\9956000679_cleaned_20251113_164315.html
+[CONTENT][9956000679] Minimal HTML rebuilt.
 [CONTENT][9956000679] Returning cleaned HTML content.
 Current page URL: https://smartstore.naver.com/joypapa_/products/9956000679
 배송비: 50000
@@ -35,7 +36,7 @@ Product 2/20: 신생아 아기 인체모형 CPR 심폐소생술 병원 실습 �
 Category: 생활/건강>수집품>모형/프라모델/피규어>모형
 Smallest Category('tiny') : 모형, Naver category number: 50004136
 옵션2 클릭 실패
-Options: {'옵션1': {'하위옵션제목': ['유아 기관 삽관 시뮬레이터', '유아 기관 삽관 시뮬레이터', '유아 CPR 시뮬레이터(천 가방 포함)', '유아 CPR 시뮬레이터(천 가방 포함)'], '하위옵션가격': [0, 0, 94800, 94800]}}
+Options: {'옵션1': {'하위옵션제목': ['유아 기관 삽관 시뮬레이터', '유아 CPR 시뮬레이터(천 가방 포함)'], '하위옵션가격': [0, 94800]}}
 Price fallback via option_list: 94,800
 Selector 'img[alt='대표이미지']' matched 2 elements.
 Selector 'img[alt^='추가이미지']' matched 5 elements.
@@ -51,9 +52,10 @@ https://shop-phinf.pstatic.net/20240215_52/1708008082410e7qdV_JPEG/1131297882860
 [CONTENT][9956000033] Trying selector: #INTRODUCE > div > div.LXGzUhHJC2.EtTm8LLHdw > div > div > div > div > div > div > div
 Using content selector '#INTRODUCE > div > div.LXGzUhHJC2.EtTm8LLHdw > div > div > div > div > div > div > div' for 9956000033
 [CONTENT][9956000033] Removed 1 blob media blocks, simplified 0 playable videos.
+[CONTENT][9956000033] DOM cleanup completed.
 [CONTENT][9956000033] Removed 1 extra DOM nodes during cleanup.
 [CONTENT][9956000033] Images after cleanup: 11
-[CONTENT][9956000033] Saved content output (cleaned): C:\dev_win\naver_crawler\debug\content_outputs\9956000033_cleaned_20251113_164351.html
+[CONTENT][9956000033] Minimal HTML rebuilt.
 [CONTENT][9956000033] Returning cleaned HTML content.
 Current page URL: https://smartstore.naver.com/joypapa_/products/9956000033
 배송비: 50000
@@ -61,7 +63,7 @@ Product 3/20: 치과헤드라이트 구강 수술 전조등 안과 돋보기 의
 Category: 출산/육아>구강청결용품>기타구강청결용품
 Smallest Category('small') : 기타구강청결용품, Naver category number: 50000625
 옵션2 클릭 실패
-Options: {'옵션1': {'하위옵션제목': ['2.5배흰색', '2.5배흰색', '3.5배더하얗게', '3.5배더하얗게', '2.5배검정', '2.5배검정', '3.5배검정', '3.5배검정', '2.5배흰색새스타일', '2.5배흰색새스타일', '2.5배검은색새스타일', '2.5배검은색새스타일', '3.5배흰색새스타일', '3.5배흰색새스타일', '3.5배검은색새스타일', '3.5배검은색새스타일', '2.5배근시렌즈+5w헤드라이트장착가능', '2.5배근시렌즈+5w헤드라이트장착가능', '3.5배근시렌즈+5w헤드라이트장착가능', '3.5배근시렌즈+5w헤드라이트장착가능', '2.5배근시렌즈+5w긴헤드라이트장착가능', '2.5배근시렌즈+5w긴헤드라이트장착가능', '3.5배근시렌즈+5w긴헤드라이트장착가능', '3.5배근시렌즈+5w긴헤드라이트장착가능'], '하위옵션가격': [17200, 17200, 17200, 17200, 17200, 17200, 17200, 17200, 17200, 17200, 17200, 17200, 17200, 17200, 17200, 17200, 0, 0, 0, 0, 11500, 11500, 11500, 11500]}}
+Options: {'옵션1': {'하위옵션제목': ['2.5배흰색', '3.5배더하얗게', '2.5배검정', '3.5배검정', '2.5배흰색새스타일', '2.5배검은색새스타일', '3.5배흰색새스타일', '3.5배검은색새스타일', '2.5배근시렌즈+5w헤드라이트장착가능', '3.5배근시렌즈+5w헤드라이트장착가능', '2.5배근시렌즈+5w긴헤드라이트장착가능', '3.5배근시렌즈+5w긴헤드라이트장착가능'], '하위옵션가격': [17200, 17200, 17200, 17200, 17200, 17200, 17200, 17200, 0, 0, 11500, 11500]}}
 Price fallback via option_list: 11,500
 Selector 'img[alt='대표이미지']' matched 2 elements.
 Selector 'img[alt^='추가이미지']' matched 5 elements.
@@ -78,9 +80,10 @@ https://shop-phinf.pstatic.net/20240215_187/1708008078395j4uSX_JPEG/358160363654
 [CONTENT][9955999781] Trying selector: #INTRODUCE > div > div.LXGzUhHJC2.EtTm8LLHdw > div > div > div > div > div > div > div
 Using content selector '#INTRODUCE > div > div.LXGzUhHJC2.EtTm8LLHdw > div > div > div > div > div > div > div' for 9955999781
 [CONTENT][9955999781] Removed 19 blob media blocks, simplified 0 playable videos.
+[CONTENT][9955999781] DOM cleanup completed.
 [CONTENT][9955999781] Removed 29 extra DOM nodes during cleanup.
 [CONTENT][9955999781] Images after cleanup: 20
-[CONTENT][9955999781] Saved content output (cleaned): C:\dev_win\naver_crawler\debug\content_outputs\9955999781_cleaned_20251113_164427.html
+[CONTENT][9955999781] Minimal HTML rebuilt.
 [CONTENT][9955999781] Returning cleaned HTML content.
 Current page URL: https://smartstore.naver.com/joypapa_/products/9955999781
 배송비: 50000
@@ -88,7 +91,7 @@ Product 4/20: 자동 티비거치대 천장형 거치대 모니터암 회의실 
 Category: 디지털/가전>영상가전>영상가전액세서리>스탠드
 Smallest Category('tiny') : 스탠드, Naver category number: 50002853
 옵션2 클릭 실패
-Options: {'옵션1': {'하위옵션제목': ['32-55인치 행거', '32-55인치 행거', '40-75인치 행거', '40-75인치 행거'], '하위옵션가격': [0, 0, 191500, 191500]}}
+Options: {'옵션1': {'하위옵션제목': ['32-55인치 행거', '40-75인치 행거'], '하위옵션가격': [0, 191500]}}
 Price fallback via option_list: 191,500
 Selector 'img[alt='대표이미지']' matched 2 elements.
 Selector 'img[alt^='추가이미지']' matched 5 elements.
@@ -104,9 +107,10 @@ https://shop-phinf.pstatic.net/20240215_246/1708008073008E0xGe_JPEG/297245984437
 [CONTENT][9955999361] Trying selector: #INTRODUCE > div > div.LXGzUhHJC2.EtTm8LLHdw > div > div > div > div > div > div > div
 Using content selector '#INTRODUCE > div > div.LXGzUhHJC2.EtTm8LLHdw > div > div > div > div > div > div > div' for 9955999361
 [CONTENT][9955999361] Removed 1 blob media blocks, simplified 0 playable videos.
+[CONTENT][9955999361] DOM cleanup completed.
 [CONTENT][9955999361] Removed 1 extra DOM nodes during cleanup.
 [CONTENT][9955999361] Images after cleanup: 17
-[CONTENT][9955999361] Saved content output (cleaned): C:\dev_win\naver_crawler\debug\content_outputs\9955999361_cleaned_20251113_164503.html
+[CONTENT][9955999361] Minimal HTML rebuilt.
 [CONTENT][9955999361] Returning cleaned HTML content.
 Current page URL: https://smartstore.naver.com/joypapa_/products/9955999361
 배송비: 50000
@@ -114,7 +118,7 @@ Product 5/20: 분재작업대 플라스틱 회전식 분갈이 업소용 회전�
 Category: 생활/건강>화방용품>조소/판화용품>조소용품
 Smallest Category('tiny') : 조소용품, Naver category number: 50003905
 옵션2 클릭 실패
-Options: {'옵션1': {'하위옵션제목': ['23cm 턴테이블', '23cm 턴테이블', '30cm 턴테이블', '30cm 턴테이블', '알루미늄 합금 직경 25cm', '알루미늄 합금 직경 25cm', '알루미늄 합금 직경 30cm', '알루미늄 합금 직경 30cm'], '하위옵션가격': [0, 0, 4600, 4600, 4600, 4600, 11000, 11000]}}
+Options: {'옵션1': {'하위옵션제목': ['23cm 턴테이블', '30cm 턴테이블', '알루미늄 합금 직경 25cm', '알루미늄 합금 직경 30cm'], '하위옵션가격': [0, 4600, 4600, 11000]}}
 Price fallback via option_list: 4,600
 Selector 'img[alt='대표이미지']' matched 2 elements.
 Selector 'img[alt^='추가이미지']' matched 4 elements.
@@ -129,20 +133,91 @@ https://shop-phinf.pstatic.net/20240215_116/1708008069310pVKxU_JPEG/363328921740
 [CONTENT][9955999065] Trying selector: #INTRODUCE > div > div.LXGzUhHJC2.EtTm8LLHdw.Uea3oKmnaJ > div > div > div > div > div > div > div
 [CONTENT][9955999065] Trying selector: #INTRODUCE > div > div.LXGzUhHJC2.EtTm8LLHdw > div > div > div > div > div > div > div
 Using content selector '#INTRODUCE > div > div.LXGzUhHJC2.EtTm8LLHdw > div > div > div > div > div > div > div' for 9955999065
-[CONTENT][9955999065] Removed 18 blob media blocks, simplified 0 playable videos.
-[CONTENT][9955999065] Removed 30 extra DOM nodes during cleanup.
+[CONTENT][9955999065] Removed 19 blob media blocks, simplified 0 playable videos.
+[CONTENT][9955999065] DOM cleanup completed.
+[CONTENT][9955999065] Removed 29 extra DOM nodes during cleanup.
 [CONTENT][9955999065] Images after cleanup: 20
-[CONTENT][9955999065] Saved content output (cleaned): C:\dev_win\naver_crawler\debug\content_outputs\9955999065_cleaned_20251113_164539.html
+[CONTENT][9955999065] Minimal HTML rebuilt.
 [CONTENT][9955999065] Returning cleaned HTML content.
 Current page URL: https://smartstore.naver.com/joypapa_/products/9955999065
 배송비: 50000
-Reached MAX_PRODUCTS_PER_PAGE=5, stop crawling this page.
-Completed page 61
-Reached MAX_PRODUCTS_TOTAL=5, stopping after page 61.
-Row 3, Content: <img src="https://axh2eqadoldy.compat.objectstorage.ap-chuncheon-1.oraclecloud.com/bucket-20230610-0
-Row 4, Content: <img src="https://axh2eqadoldy.compat.objectstorage.ap-chuncheon-1.oraclecloud.com/bucket-20230610-0
-Row 5, Content: <img src="https://axh2eqadoldy.compat.objectstorage.ap-chuncheon-1.oraclecloud.com/bucket-20230610-0
-Row 6, Content: <img src="https://axh2eqadoldy.compat.objectstorage.ap-chuncheon-1.oraclecloud.com/bucket-20230610-0
-Row 7, Content: <img src="https://axh2eqadoldy.compat.objectstorage.ap-chuncheon-1.oraclecloud.com/bucket-20230610-0
-Processed pages 61 to 61
-MAX_PRODUCTS_TOTAL reached; ending crawl.
+Product 6/20: 천장형 티비거치대 대형 모니터 브라켓 헬스장 브래킷, N/A won, https://smartstore.naver.com/joypapa_/products/9955998408
+Category: 디지털/가전>영상가전>영상가전액세서리>스탠드
+Smallest Category('tiny') : 스탠드, Naver category number: 50002853
+옵션2 클릭 실패
+Options: {'옵션1': {'하위옵션제목': ['14-42인치/전체길이4미터들어올리기가능', '26-65인치/총길이3미터들어올릴수있음', '26-65인치/총길이4미터들어올릴수있음', '32-75인치/전체길이1미터들어올리기가능', '32-75인치/전체길이2미터들어올릴수있음', '32-75인치/전체길이3미터리프팅가능', '32-75인치/총길이4미터들어올리기가능'], '하위옵션가격': [3900, 0, 9000, 1000, 7400, 14700, 20100]}}
+Price fallback via option_list: 1,000
+Selector 'img[alt='대표이미지']' matched 2 elements.
+Selector 'img[alt^='추가이미지']' matched 3 elements.
+common_urls: ['https://shop-phinf.pstatic.net/20240215_121/1708008060452vNWt8_JPEG/11312956878024427_555359138.jpg']
+other_images: []
+Main image: https://shop-phinf.pstatic.net/20240215_121/1708008060452vNWt8_JPEG/11312956878024427_555359138.jpg
+Other images: []
+URLs not starting with most common three digits:
+https://shop-phinf.pstatic.net/20240215_254/17080080606492cVFA_JPEG/260493483568239_2069639961.jpg
+https://shop-phinf.pstatic.net/20240215_208/1708008060835EGgPL_JPEG/36332883706977620_1410076694.jpg
+[CONTENT][9955998408] Trying selector: #INTRODUCE > div > div.LXGzUhHJC2.EtTm8LLHdw.Uea3oKmnaJ > div > div > div > div > div > div > div
+[CONTENT][9955998408] Trying selector: #INTRODUCE > div > div.LXGzUhHJC2.EtTm8LLHdw > div > div > div > div > div > div > div
+Using content selector '#INTRODUCE > div > div.LXGzUhHJC2.EtTm8LLHdw > div > div > div > div > div > div > div' for 9955998408
+[CONTENT][9955998408] Removed 1 blob media blocks, simplified 0 playable videos.
+[CONTENT][9955998408] DOM cleanup completed.
+[CONTENT][9955998408] Removed 1 extra DOM nodes during cleanup.
+[CONTENT][9955998408] Images after cleanup: 45
+[CONTENT][9955998408] Minimal HTML rebuilt.
+[CONTENT][9955998408] Returning cleaned HTML content.
+Current page URL: https://smartstore.naver.com/joypapa_/products/9955998408
+배송비: 50000
+Product 7/20: 냉동게이지 에어컨 디지털 압격 게이지 Bluetooth 냉매, N/A won, https://smartstore.naver.com/joypapa_/products/9955885378
+Category: 생활/건강>공구>용접공구>용접기
+Smallest Category('tiny') : 용접기, Naver category number: 50003360
+옵션2 클릭 실패
+Options: {'옵션1': {'하위옵션제목': ['테스토549', 'testo550i독립형05642550'], '하위옵션가격': [0, 171400]}}
+Price fallback via option_list: 171,400
+Selector 'img[alt='대표이미지']' matched 2 elements.
+Selector 'img[alt^='추가이미지']' matched 3 elements.
+common_urls: ['https://shop-phinf.pstatic.net/20240215_164/1708006382558jhCzS_JPEG/2970769386832539_656985885.jpg', 'https://shop-phinf.pstatic.net/20240215_209/1708006382918690iG_JPEG/2970769748323859_1960465287.jpg']
+other_images: ['https://shop-phinf.pstatic.net/20240215_209/1708006382918690iG_JPEG/2970769748323859_1960465287.jpg']
+Main image: https://shop-phinf.pstatic.net/20240215_164/1708006382558jhCzS_JPEG/2970769386832539_656985885.jpg
+Other images: ['https://shop-phinf.pstatic.net/20240215_209/1708006382918690iG_JPEG/2970769748323859_1960465287.jpg']
+URLs not starting with most common three digits:
+https://shop-phinf.pstatic.net/20240215_10/17080063822876jxGl_JPEG/259191572851822_1150877365.jpg
+[CONTENT][9955885378] Trying selector: #INTRODUCE > div > div.LXGzUhHJC2.EtTm8LLHdw.Uea3oKmnaJ > div > div > div > div > div > div > div
+[CONTENT][9955885378] Trying selector: #INTRODUCE > div > div.LXGzUhHJC2.EtTm8LLHdw > div > div > div > div > div > div > div
+Using content selector '#INTRODUCE > div > div.LXGzUhHJC2.EtTm8LLHdw > div > div > div > div > div > div > div' for 9955885378
+[CONTENT][9955885378] Removed 1 blob media blocks, simplified 0 playable videos.
+[CONTENT][9955885378] DOM cleanup completed.
+[CONTENT][9955885378] Removed 1 extra DOM nodes during cleanup.
+[CONTENT][9955885378] Images after cleanup: 22
+[CONTENT][9955885378] Minimal HTML rebuilt.
+[CONTENT][9955885378] Returning cleaned HTML content.
+Current page URL: https://smartstore.naver.com/joypapa_/products/9955885378
+배송비: 50000
+Product 8/20: 노트북화면증폭기 돋보기 확대경 모니터 접이식 장비, N/A won, https://smartstore.naver.com/joypapa_/products/9955851271
+Category: 디지털/가전>광학기기/용품>현미경
+Smallest Category('small') : 현미경, Naver category number: 50002012
+옵션2 클릭 실패
+Options: {'옵션1': {'하위옵션제목': ['클래식한 나무색', '클래식 화이트'], '하위옵션가격': [0, 3200]}}
+Price fallback via option_list: 3,200
+Selector 'img[alt='대표이미지']' matched 2 elements.
+Selector 'img[alt^='추가이미지']' matched 6 elements.
+common_urls: ['https://shop-phinf.pstatic.net/20240215_96/1708005824655LADNr_JPEG/36330647519280667_1472476250.jpg', 'https://shop-phinf.pstatic.net/20240215_193/1708005825329ANipf_JPEG/36330648189415237_814835296.jpg']
+other_images: ['https://shop-phinf.pstatic.net/20240215_193/1708005825329ANipf_JPEG/36330648189415237_814835296.jpg']
+Main image: https://shop-phinf.pstatic.net/20240215_96/1708005824655LADNr_JPEG/36330647519280667_1472476250.jpg
+Other images: ['https://shop-phinf.pstatic.net/20240215_193/1708005825329ANipf_JPEG/36330648189415237_814835296.jpg']
+URLs not starting with most common three digits:
+https://shop-phinf.pstatic.net/20240215_216/1708005824860efSGm_JPEG/4261975727054989_1652468756.jpg
+https://shop-phinf.pstatic.net/20240215_297/1708005825082t3Vmc_JPEG/35813783047910094_165832021.jpg
+https://shop-phinf.pstatic.net/20240215_21/1708005825867Yle5b_PNG/58761155705963349_525509967.png
+https://shop-phinf.pstatic.net/20240215_190/1708005826174XwHgz_PNG/35813784125012572_24138117.png
+[CONTENT][9955851271] Trying selector: #INTRODUCE > div > div.LXGzUhHJC2.EtTm8LLHdw.Uea3oKmnaJ > div > div > div > div > div > div > div
+[CONTENT][9955851271] Trying selector: #INTRODUCE > div > div.LXGzUhHJC2.EtTm8LLHdw > div > div > div > div > div > div > div
+Using content selector '#INTRODUCE > div > div.LXGzUhHJC2.EtTm8LLHdw > div > div > div > div > div > div > div' for 9955851271
+[CONTENT][9955851271] Removed 19 blob media blocks, simplified 0 playable videos.
+[CONTENT][9955851271] DOM cleanup completed.
+[CONTENT][9955851271] Removed 29 extra DOM nodes during cleanup.
+[CONTENT][9955851271] Images after cleanup: 22
+[CONTENT][9955851271] Minimal HTML rebuilt.
+[CONTENT][9955851271] Returning cleaned HTML content.
+Current page URL: https://smartstore.naver.com/joypapa_/products/9955851271
+배송비: 50000
+Product 9/20: 녹슨나사제거기 절단기 파쇄기 너트 커터 제거 유압, N/A won, https://smartstore.naver.com/joypapa_/products/9955850675

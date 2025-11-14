@@ -1,0 +1,9 @@
+[RUN] HEADLESS=True BROWSER=chromium
+현재 페이지 번호 탐색 실패 - URL: https://smartstore.naver.com/joypapa_/category/ALL?st=RECENT&dt=BIG_IMAGE&size=20
+aria-current 후보: []
+현재 페이지 번호를 확인할 수 없어 다시 시도합니다.
+타겟 61가 보이지 않아 '다음' 그룹 이동 시도
+현재 페이지 번호 탐색 실패 - URL: https://smartstore.naver.com/joypapa_/category/ALL?st=RECENT&dt=BIG_IMAGE&size=20
+aria-current 후보: []
+현재 페이지 번호를 확인할 수 없어 다시 시도합니다.
+타겟 61가 보이지 않아 '다음' 그룹 이동 시도

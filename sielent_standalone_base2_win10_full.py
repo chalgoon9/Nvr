@@ -70,7 +70,7 @@ def fallback_load_dotenv(dotenv_path):
 
 
 SCRIPT_DIR = Path(__file__).resolve().parent
-LOG_FILE = SCRIPT_DIR / "log.txt"
+LOG_FILE = SCRIPT_DIR / "log_sielent.txt"
 
 
 def resolve_category_path() -> Path:
@@ -107,10 +107,14 @@ if _only_pages_raw:
 # 기본값은 비활성화(네이버는 URL 파라미터만으로 DOM이 바뀌지 않는 경우가 많음)
 PAGE_JUMP_BY_QUERY = os.getenv("PAGE_JUMP_BY_QUERY", "0").lower() in {"1", "true", "yes"}
 
+
+PLAYWRIGHT_QUIET = os.getenv("PLAYWRIGHT_QUIET", "1").lower() in {"1", "true", "yes"}
+
 # 페이지 이동 과정 스크린샷 저장(디버깅 용도)
 # 기본값 비활성화: 요청에 따라 캡처 중단
 PAGINATION_DEBUG_SHOTS = os.getenv("PAGINATION_DEBUG_SHOTS", "0").lower() in {"1", "true", "yes"}
 
+OPEN_EXCEL = os.getenv("OPEN_EXCEL", "0").lower() in {"1", "true", "yes"}
 # 페이지네이션 전략: auto(기본) | next_only('다음'만 반복)
 PAGINATION_STRATEGY = os.getenv("PAGINATION_STRATEGY", "auto").lower().strip()
 
@@ -2136,8 +2140,7 @@ def write_to_excel(df, excel_path, seen_urls):
             break
     book.save(excel_path)
 
-    OPEN_EXCEL_AFTER_SAVE = os.getenv("OPEN_EXCEL_AFTER_SAVE", "0").lower() in {"1", "true", "yes"}
-    if os.name == "nt" and OPEN_EXCEL_AFTER_SAVE:
+    if os.name == "nt" and OPEN_EXCEL:
         os.system(f'start "" "excel.exe" "{excel_path}"')
     else:
         print(f"Excel file saved to {excel_path}. Automatic Excel launch is skipped on non-Windows platforms.")
@@ -2168,7 +2171,7 @@ with sync_playwright() as p:
         browser_name = "chromium"
 
     headless_mode = os.getenv("PLAYWRIGHT_HEADLESS", "0").lower() in {"1", "true", "yes"}
-
+    print(f"[RUN] HEADLESS={headless_mode} BROWSER={browser_name} QUIET={PLAYWRIGHT_QUIET}")
     if browser_name == "chromium":
         launch_args = [
             "--disable-blink-features=AutomationControlled",
@@ -2178,6 +2181,13 @@ with sync_playwright() as p:
             "--disable-accelerated-2d-canvas",
             "--disable-gpu",
         ]
+        if (not headless_mode) and PLAYWRIGHT_QUIET and os.name == "nt":
+            launch_args += [
+                "--start-minimized",
+                "--window-position=-32000,-32000",
+                "--mute-audio",
+                "--disable-notifications",
+            ]
         browser = p.chromium.launch(headless=headless_mode, args=launch_args)
         context = browser.new_context()
     elif browser_name == "firefox":

@@ -1,11 +1,11 @@
-from pathlib import Path
+﻿from pathlib import Path
 from playwright.sync_api import sync_playwright, TimeoutError as PlaywrightTimeoutError
 try:
     from playwright_stealth import Stealth
 except ImportError:
     Stealth = None
 from collections import Counter
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 from openpyxl import load_workbook
 import pandas as pd
 import random
@@ -20,7 +20,16 @@ from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
 
 
 # 페이지당 최대 크롤링 상품 수 (0이면 제한 없음)
-MAX_PRODUCTS_PER_PAGE = int(os.getenv("MAX_PRODUCTS_PER_PAGE", "0") or 0)
+DEFAULT_MAX_PRODUCTS_PER_PAGE = 0
+MAX_PRODUCTS_PER_PAGE = int(
+    os.getenv("MAX_PRODUCTS_PER_PAGE", str(DEFAULT_MAX_PRODUCTS_PER_PAGE)) or DEFAULT_MAX_PRODUCTS_PER_PAGE
+)
+
+# 전체 실행에서 최대 수집 상품 수 (0이면 제한 없음)
+DEFAULT_MAX_PRODUCTS_TOTAL = 0
+MAX_PRODUCTS_TOTAL = int(
+    os.getenv("MAX_PRODUCTS_TOTAL", str(DEFAULT_MAX_PRODUCTS_TOTAL)) or DEFAULT_MAX_PRODUCTS_TOTAL
+)
 
 
 # .env 로더 (python-dotenv 미설치 시 최소 파서)
@@ -78,6 +87,9 @@ def resolve_category_path() -> Path:
 
 NAVER_CATEGORY_PATH = resolve_category_path()
 CRAWLER_DRY_RUN = os.getenv("CRAWLER_DRY_RUN", "0").lower() in {"1", "true", "yes"}
+WRAP_CONTENT_HTML = os.getenv("WRAP_CONTENT_HTML", "0").lower() in {"1", "true", "yes"}
+DUMP_CONTENT_HTML = os.getenv("DUMP_CONTENT_HTML", "0").lower() in {"1", "true", "yes"}
+DUMP_CONTENT_DIR = SCRIPT_DIR / "debug" / "content_outputs"
 
 # 선택 페이지만 크롤링하는 디버그용 옵션(예: CRAWL_ONLY_PAGES="51,59").
 # 지정되지 않으면 기존 범위(global_start_page~global_last_page) 전체를 처리합니다.
@@ -164,6 +176,18 @@ def save_debug_snapshot(page, prefix):
         print(f"Failed to save debug snapshot: {exc}")
 
 
+def save_debug_html(product_code, html_text, suffix):
+    path = (SCRIPT_DIR / "debug")
+    path.mkdir(exist_ok=True)
+    timestamp = time.strftime("%Y%m%d_%H%M%S")
+    filename = path / f"{product_code}_{suffix}_{timestamp}.html"
+    try:
+        filename.write_text(html_text, encoding="utf-8")
+        print(f"[CONTENT][{product_code}] Saved debug HTML: {filename}")
+    except Exception as exc:
+        print(f"[CONTENT][{product_code}] Failed to save debug HTML: {exc}")
+
+
 def extract_price_from_text(raw_text):
     match = re.search(r"([\d,]+)\s*원", raw_text)
     if match:
@@ -175,6 +199,84 @@ def extract_price_from_text(raw_text):
         return "{:,}".format(int(digits))
     except ValueError:
         return "N/A"
+
+
+def has_numeric_chars(value):
+    if value is None:
+        return False
+    return bool(re.search(r"\d", str(value)))
+
+
+def normalize_price_value(value):
+    if value in (None, "", "N/A"):
+        return None
+    if isinstance(value, (int, float)):
+        if value <= 0:
+            return None
+        return int(value)
+    digits = re.sub(r"[^\d]", "", str(value))
+    if not digits:
+        return None
+    try:
+        numeric = int(digits)
+    except ValueError:
+        return None
+    return numeric if numeric > 0 else None
+
+
+def price_from_option_data(option_data):
+    if not option_data:
+        return None
+    candidates = []
+    for data in option_data.values():
+        prices = data.get('하위옵션가격') if isinstance(data, dict) else None
+        if not prices:
+            continue
+        for raw in prices:
+            normalized = normalize_price_value(raw)
+            if normalized:
+                candidates.append(normalized)
+    if not candidates:
+        return None
+    return min(candidates)
+
+
+_PRELOADED_PRICE_SCRIPT = """
+() => {
+    const state = window.__PRELOADED_STATE__;
+    if (!state || !state.productSimpleView || !state.productSimpleView.product) {
+        return null;
+    }
+    const product = state.productSimpleView.product;
+    const wrap = (value) => {
+        const type = typeof value;
+        if (type === "number" || type === "string") {
+            return value;
+        }
+        return null;
+    };
+    return {
+        salePrice: wrap(product.salePrice),
+        discountedSalePrice: wrap(product.discountedSalePrice),
+        price: wrap(product.price)
+    };
+}
+"""
+
+
+def price_from_preloaded_state(page):
+    try:
+        price_info = page.evaluate(_PRELOADED_PRICE_SCRIPT)
+    except Exception as exc:
+        print(f"Failed to read PRELOADED_STATE price: {exc}")
+        return None
+    if not price_info:
+        return None
+    for key in ("salePrice", "discountedSalePrice", "price"):
+        normalized = normalize_price_value(price_info.get(key))
+        if normalized:
+            return normalized
+    return None
 
 
 def update_query_params(url, **params):
@@ -212,14 +314,14 @@ def product_list_crawl(context, df, read_excel_path, seen_urls):
     if browser_name == "chromium" and STEALTH_HELPER:
         STEALTH_HELPER.apply_stealth_sync(page)
 
-    raw_url = 'https://smartstore.naver.com/joypapa_/category/ALL?st=RECENT&dt=BIG_IMAGE&size=80'
+    raw_url = 'https://smartstore.naver.com/joypapa_/category/ALL?st=RECENT&dt=BIG_IMAGE&size=20'
     original_url = update_query_params(raw_url, page=None)
     page.goto(original_url)
     page.wait_for_load_state("load")
     page.wait_for_load_state("networkidle")
 
-    global_start_page = 51
-    global_last_page = 59
+    global_start_page = 61
+    global_last_page = 61
     # 디버그: 특정 페이지만 요청된 경우 범위를 해당 값으로 축소
     if CRAWL_ONLY_PAGES:
         try:
@@ -238,6 +340,7 @@ def product_list_crawl(context, df, read_excel_path, seen_urls):
         "next": ["다음", "다음 페이지", "다음페이지", ">"],
         "prev": ["이전", "이전 페이지", "이전페이지", "<"]
     }
+    reached_total_limit = False
 
     # 검증 모드: 특정 페이지의 첫 상품을 열어 기대 URL/이름 확인
     verify_target_page = None
@@ -771,6 +874,11 @@ def product_list_crawl(context, df, read_excel_path, seen_urls):
                 return
             df, _ = crawl_page(page, df, seen_urls)
             print(f"Completed page {page_number}")
+            if MAX_PRODUCTS_TOTAL and len(df) >= MAX_PRODUCTS_TOTAL:
+                df = df.iloc[:MAX_PRODUCTS_TOTAL]
+                reached_total_limit = True
+                print(f"Reached MAX_PRODUCTS_TOTAL={MAX_PRODUCTS_TOTAL}, stopping after page {page_number}.")
+                break
 
         write_to_excel(df, write_excel_path, seen_urls)
         write_to_excel2(
@@ -778,29 +886,106 @@ def product_list_crawl(context, df, read_excel_path, seen_urls):
             output_folder / f'dolce_{shopname}_{shopnumber}_{start_page}_{last_page}_second.xlsx'
         )
         print(f"Processed pages {start_page} to {last_page}")
+        if reached_total_limit:
+            print("MAX_PRODUCTS_TOTAL reached; ending crawl.")
+            break
 
     page.close()
 
 
+def ensure_product_detail_visible(page):
+    """Ensure the SmartStore 상세정보 영역 is expanded so selectors become available."""
+    toggle_selectors = [
+        "button[data-resize-on-click='true']",
+        "button:has-text('상세정보 펼치기')",
+        "button:has-text('상세정보 더보기')",
+    ]
+    for selector in toggle_selectors:
+        try:
+            toggle = page.query_selector(selector)
+        except Exception:
+            toggle = None
+        if not toggle:
+            continue
+        try:
+            aria_expanded = (toggle.get_attribute("aria-expanded") or "").lower()
+        except Exception:
+            aria_expanded = ""
+        try:
+            label = (toggle.inner_text() or "").strip()
+        except Exception:
+            label = ""
+        need_expand = (
+            aria_expanded == "false"
+            or ("펼치기" in label and "접기" not in label)
+            or ("더보기" in label and "접기" not in label)
+        )
+        if need_expand:
+            try:
+                toggle.scroll_into_view_if_needed()
+            except Exception:
+                pass
+            toggle.click()
+            page.wait_for_load_state("networkidle")
+            page.wait_for_timeout(500)
+        break
+    for _ in range(4):
+        try:
+            section = page.query_selector("#INTRODUCE")
+        except Exception:
+            section = None
+        if section:
+            try:
+                section.scroll_into_view_if_needed()
+            except Exception:
+                try:
+                    page.evaluate("document.getElementById('INTRODUCE')?.scrollIntoView({behavior: 'instant', block: 'start'})")
+                except Exception:
+                    pass
+            try:
+                section.wait_for_element_state("visible", timeout=2000)
+            except Exception:
+                pass
+            break
+        try:
+            page.mouse.wheel(0, 1200)
+        except Exception:
+            try:
+                page.evaluate("window.scrollBy(0, document.body.scrollHeight / 3)")
+            except Exception:
+                pass
+        page.wait_for_timeout(500)
+    try:
+        page.wait_for_selector("#INTRODUCE", timeout=5000)
+    except Exception:
+        pass
+
+
 def find_content_element(page, product_code):
     time.sleep(1)
+    ensure_product_detail_visible(page)
 
     content_selectors = [
+        '#INTRODUCE > div > div.LXGzUhHJC2.EtTm8LLHdw.Uea3oKmnaJ > div > div > div > div > div > div > div',
+        '#INTRODUCE > div > div.LXGzUhHJC2.EtTm8LLHdw > div > div > div > div > div > div > div',
         '#INTRODUCE .detail_viewer',
         '#INTRODUCE [data-component-id]',
+        '#INTRODUCE .se-main-container',
         '#INTRODUCE',
         '[data-name="INTRODUCE"][role="tabpanel"]',
         'xpath=//*[@id="INTRODUCE"]//div[contains(@data-component-id,"INTRODUCE")]//div[contains(@class,"se_component")]//div[last()]',
+        'xpath=//*[@id="INTRODUCE"]//div[contains(@class,"se-main-container")]',
         'xpath=//*[@id="INTRODUCE"]/div/div[4]',
     ]
 
     for selector in content_selectors:
+        print(f"[CONTENT][{product_code}] Trying selector: {selector}")
         element = page.query_selector(selector)
         if element is not None:
             print(f"Using content selector '{selector}' for {product_code}")
             return selector
 
-    print("상품 상세 컨텐츠 영역을 찾지 못했습니다. 스냅샷 저장 후 None 반환")
+    print(f"[CONTENT][{product_code}] 상품 상세 컨텐츠 영역을 찾지 못했습니다. 스냅샷 저장 후 None 반환")
     save_debug_snapshot(page, f"content_{product_code}")
     return None
 
@@ -985,6 +1170,11 @@ def option_crawl(page):
             category = f"옵션{option_index}"
 
         try:
+            # Ensure element is scrolled into view before clicking (headless-safe)
+            try:
+                trigger.scroll_into_view_if_needed()
+            except Exception:
+                pass
             trigger.click()
         except PlaywrightTimeoutError:
             print(f"{category} 클릭 실패")
@@ -999,6 +1189,7 @@ def option_crawl(page):
         items = dropdown.query_selector_all("[role='option'], a, li")
         current_options = []
         current_prices = []
+        seen_names = set()
 
         for item in items:
             option_text = item.inner_text().strip()
@@ -1012,7 +1203,12 @@ def option_crawl(page):
                 price_value = 0
                 name = option_text
 
-            current_options.append(name)
+            # De-duplicate by normalized visible text to prevent double capture
+            name_norm = re.sub(r"\s+", " ", name)
+            if name_norm in seen_names:
+                continue
+            seen_names.add(name_norm)
+            current_options.append(name_norm)
             current_prices.append(price_value)
 
         if not current_options:
@@ -1118,28 +1314,350 @@ def image_crawl(page):
     return common_urls, different_urls
 
 
+BRANDING_IMAGE_URLS = {
+    "https://axh2eqadoldy.compat.objectstorage.ap-chuncheon-1.oraclecloud.com/bucket-20230610-0005/upload/top.png",
+    "https://axh2eqadoldy.compat.objectstorage.ap-chuncheon-1.oraclecloud.com/bucket-20230610-0005/upload/bottom.png",
+    "https://coudae.s3.ap-northeast-2.amazonaws.com/A00412936/cloud/7290.png",
+}
+
+_GRAY_LINE_REPLACEMENTS = {
+    "https://rapid-up.s3.ap-northeast-2.amazonaws.com/dev/gray-line.png":
+        "https://axh2eqadoldy.compat.objectstorage.ap-chuncheon-1.oraclecloud.com/bucket-20230610-0005/upload/gray-line.png"
+}
+
+_BLOCKED_IMAGE_PREFIXES = (
+    "https://rapid-up.s3.ap-northeast-2.amazonaws.com",
+    "https://cdn.heyseller.kr",
+    "https://ai.esmplus.com/",
+)
+
+
+def log_content_debug(product_code, message):
+    print(f"[CONTENT][{product_code}] {message}")
+
+
+def wrap_html_document(snippet):
+    if not snippet:
+        return ""
+    return (
+        "<!DOCTYPE html>"
+        "<html lang=\"ko\">"
+        "<head>"
+        "<meta charset=\"utf-8\">"
+        "<style>body{margin:0;padding:0;background:#fff;}</style>"
+        "</head>"
+        "<body>"
+        f"{snippet}"
+        "</body>"
+        "</html>"
+    )
+
+
+def dump_content_html(product_code, html_text, label):
+    if not DUMP_CONTENT_HTML:
+        return
+    if not html_text:
+        return
+    try:
+        DUMP_CONTENT_DIR.mkdir(parents=True, exist_ok=True)
+        timestamp = time.strftime("%Y%m%d_%H%M%S")
+        filename = DUMP_CONTENT_DIR / f"{product_code}_{label}_{timestamp}.html"
+        filename.write_text(html_text, encoding="utf-8")
+        print(f"[CONTENT][{product_code}] Saved content output ({label}): {filename}")
+    except Exception as exc:
+        print(f"[CONTENT][{product_code}] Failed to save content output: {exc}")
+
+
+def cleanup_dom_structure(soup, product_code):
+    removed = 0
+
+    for tag_name in ("style", "script", "svg", "canvas"):
+        for node in list(soup.find_all(tag_name)):
+            node.decompose()
+            removed += 1
+
+    selectors_to_remove = [
+        ".pzp-ui-dimmed",
+        ".pzp-upnext-endscreen",
+        ".pzp-ui-playlist",
+        ".pzp-double-tap-overlay",
+        ".pzp-ad-break-indicator",
+        ".pzp-pc__poster",
+        ".pzp-ui-circle-process",
+        ".pzp-ui-dimmed",
+    ]
+    for selector in selectors_to_remove:
+        for node in list(soup.select(selector)):
+            node.decompose()
+            removed += 1
+
+    selectors_to_unwrap = [
+        ".se-main-container",
+        ".editor_wrap",
+        ".se-viewer",
+        ".uOXg8u0yzs",
+        ".LXGzUhHJC2",
+        ".EtTm8LLHdw",
+        ".Uea3oKmnaJ",
+        ".se-component",
+        ".se-component-content",
+        ".se-section",
+        ".se-module",
+        ".se-section-video",
+        ".se-module-video",
+        "[aria-label*='비디오']",
+        "[aria-label*='동영상']",
+        "[id^='wpc-']",
+        ".pzp-pc__video",
+    ]
+    for selector in selectors_to_unwrap:
+        for node in list(soup.select(selector)):
+            node.unwrap()
+
+    structural_tags = ["div", "span", "p"]
+    for tag in list(soup.find_all(structural_tags)):
+        if not isinstance(tag, Tag):
+            continue
+        if tag is None:
+            continue
+        attrs = getattr(tag, "attrs", {}) or {}
+        style_attr = attrs.get("style", "") or ""
+        style_attr = "; ".join(filter(None, (piece.strip() for piece in style_attr.split(";"))))
+        if style_attr:
+            tag["style"] = style_attr
+        else:
+            try:
+                tag.attrs.pop("style")
+            except (KeyError, AttributeError):
+                pass
+
+        has_media = tag.find(["img", "video"])
+        has_text = bool(tag.get_text(strip=True))
+        if not has_media and not has_text:
+            tag.decompose()
+            continue
+        if tag.name == "div" and tag.find("p") and not has_media:
+            for pchild in list(tag.find_all("p", recursive=False)):
+                tag.insert_before(pchild)
+            tag.unwrap()
+            continue
+        if tag.name != "p":
+            tag.unwrap()
+
+    for a_tag in list(soup.find_all("a")):
+        a_tag.unwrap()
+
+    for br in list(soup.find_all("br")):
+        if not br.previous_sibling and not br.next_sibling:
+            br.decompose()
+
+    log_content_debug(product_code, "DOM cleanup completed.")
+
+    if removed:
+        log_content_debug(product_code, f"Removed {removed} extra DOM nodes during cleanup.")
+
+
+def build_minimal_html(soup, product_code):
+    minimal = BeautifulSoup("", "html.parser")
+    fragments = []
+
+    css_link = soup.find("link", href=True)
+    if css_link:
+        head = minimal.new_tag("head")
+        link = minimal.new_tag("link", rel="stylesheet", href=css_link.get("href"))
+        head.append(link)
+        fragments.append(head)
+
+    allowed_headings = {"h1", "h2", "h3"}
+
+    for node in soup.descendants:
+        if not isinstance(node, Tag):
+            continue
+        name = node.name
+        if name == "img":
+            src = (node.get("src") or "").strip()
+            if not src:
+                continue
+            img = minimal.new_tag("img", src=src)
+            img["style"] = "display: block; margin-left: auto; margin-right: auto; margin-bottom: 10px;"
+            fragments.append(img)
+            fragments.append(minimal.new_tag("br"))
+        elif name == "video":
+            src = (node.get("src") or "").strip()
+            if not src or src.startswith("blob:"):
+                continue
+            video = minimal.new_tag("video")
+            video["src"] = src
+            video["controls"] = "controls"
+            video["autoplay"] = "autoplay"
+            video["muted"] = "muted"
+            video["loop"] = "loop"
+            video["style"] = "display:block;margin:0 auto 20px auto;max-width:100%;"
+            fragments.append(video)
+            fragments.append(minimal.new_tag("br"))
+        elif name in allowed_headings:
+            text = node.get_text(" ", strip=True)
+            if not text:
+                continue
+            heading = minimal.new_tag(name)
+            heading.string = text
+            fragments.append(heading)
+        elif name == "p":
+            text = node.get_text(" ", strip=True)
+            if not text:
+                continue
+            p = minimal.new_tag("p")
+            p.string = text
+            fragments.append(p)
+
+    if not fragments:
+        return ""
+
+    html_parts = []
+    for frag in fragments:
+        html_parts.append(str(frag))
+    result = "".join(html_parts)
+    log_content_debug(product_code, "Minimal HTML rebuilt.")
+    return result
+
+
+def strip_blob_media(soup, product_code):
+    removed = 0
+    simplified_videos = 0
+
+    for component in list(soup.select(".se-component.se-video")):
+        playable_src = None
+        video_tags = component.find_all("video")
+        for video_tag in video_tags:
+            src_candidates = [video_tag.get("src"), video_tag.get("data-src")]
+            for candidate in src_candidates:
+                if candidate and not candidate.startswith("blob:"):
+                    playable_src = candidate
+                    break
+            if playable_src:
+                break
+
+        if playable_src:
+            simple_video = soup.new_tag("video")
+            simple_video["src"] = playable_src
+            simple_video["controls"] = "controls"
+            simple_video["autoplay"] = "autoplay"
+            simple_video["muted"] = "muted"
+            simple_video["loop"] = "loop"
+            simple_video["style"] = "display:block;margin:0 auto 20px auto;max-width:100%;"
+            component.replace_with(simple_video)
+            simplified_videos += 1
+        else:
+            component.decompose()
+            removed += 1
+
+    blob_tags = []
+    for tag in soup.find_all(["video", "source", "iframe", "canvas"]):
+        attrs = [
+            tag.get("src", ""),
+            tag.get("data-src", ""),
+            tag.get("poster", ""),
+        ]
+        if any(attr and "blob:" in attr for attr in attrs):
+            blob_tags.append(tag)
+
+    for tag in blob_tags:
+        parent = tag.find_parent(class_="se-component se-video") or tag
+        parent.decompose()
+        removed += 1
+
+    extra_selectors = [
+        ".prismplayer-area",
+        "[class*='pzp-']",
+        "[class*='pzp_']",
+        "[class*='pzp ']",
+        "[class~='pzp']",
+        "[class*='webplayer']",
+        "[class*='player-area']",
+        "[class*='pzp-pc']",
+        "[class*='pzp-ui']",
+        "[class*='pzp-upnext']",
+    ]
+    for selector in extra_selectors:
+        for node in soup.select(selector):
+            node.decompose()
+            removed += 1
+
+    video_text_keywords = (
+        "광고 후 계속됩니다",
+        "다음 동영상",
+        "subject",
+        "author",
+        "재생 속도",
+        "해상도",
+        "자막",
+        "옵션",
+        "도움말",
+        "죄송합니다. 문제가 발생했습니다",
+        "고화질 재생이 가능한 영상입니다",
+        "더 알아보기",
+        "00:00",
+        "0:00",
+    )
+    removed_text = 0
+    for text_node in list(soup.find_all(string=True)):
+        stripped = text_node.strip()
+        if not stripped:
+            continue
+        if any(keyword in stripped for keyword in video_text_keywords):
+            container = getattr(text_node, "parent", None)
+            if container is None:
+                continue
+            if container.name in {"html", "body"}:
+                continue
+            parent_component = container.find_parent(class_="se-component se-video")
+            target = parent_component or container
+            try:
+                target.decompose()
+                removed_text += 1
+            except Exception:
+                continue
+    removed += removed_text
+
+    if removed or simplified_videos:
+        log_content_debug(
+            product_code,
+            f"Removed {removed} blob media blocks, simplified {simplified_videos} playable videos.",
+        )
+
+
 def content_crawl(page, product_code, element_selector):
     time.sleep(1)
     page.wait_for_load_state("load")
 
     if not element_selector:
-        print("Invalid element selector. Moving to the next item.")
+        log_content_debug(product_code, "No element selector available.")
         return None
 
     element = page.query_selector(element_selector)
     if element is None:
-        print("No valid element found for the selector. Moving to the next item.")
+        log_content_debug(product_code, f"Selector '{element_selector}' resolved to None.")
+        save_debug_snapshot(page, f"content_missing_{product_code}")
         return None
 
-    content = element.inner_html()
-    soup = BeautifulSoup(content, 'html.parser')
+    raw_content = element.inner_html()
+    if not (raw_content or "").strip():
+        log_content_debug(product_code, "Element inner_html is empty; capturing page snapshot.")
+        save_debug_snapshot(page, f"content_empty_{product_code}")
+        return None
+    soup = BeautifulSoup(raw_content, 'html.parser')
 
-    if '계속됩니다' in soup.get_text():
-        print("found 계속됩니다")
+    text_snapshot = soup.get_text(strip=True)
+    normalized_text = text_snapshot.replace(" ", "").replace("\u00a0", "")
+    if normalized_text in {"계속됩니다", "계속됩니다.", "계속됩니다..", "계속됩니다..."}:
+        log_content_debug(product_code, "'계속됩니다' placeholder detected (no other content), skipping.")
         return None
 
-    css_link = soup.new_tag("link", rel="stylesheet",
-                            href="https://static-resource-smartstore.pstatic.net/smartstore/p/static/20230630180923/common.css")
+    css_link = soup.new_tag(
+        "link",
+        rel="stylesheet",
+        href="https://static-resource-smartstore.pstatic.net/smartstore/p/static/20230630180923/common.css",
+    )
     if soup.head:
         soup.head.append(css_link)
     else:
@@ -1147,89 +1665,166 @@ def content_crawl(page, product_code, element_selector):
         head_tag.append(css_link)
         soup.insert(0, head_tag)
 
-    for button in soup.find_all('button'):
+    for button in soup.find_all("button"):
         button.decompose()
+
+    for img in soup.find_all("img", attrs={"data-src": True}):
+        img["src"] = img["data-src"]
+        del img["data-src"]
+
+    for img in soup.find_all("img", src="https://rapid-up.s3.ap-northeast-2.amazonaws.com/dev/gray-line.png"):
+        img["src"] = _GRAY_LINE_REPLACEMENTS["https://rapid-up.s3.ap-northeast-2.amazonaws.com/dev/gray-line.png"]
+
+    text_to_remove = "* {text-align: center;}  #mycontents11 img{max-width: 100%;}"
+    if text_to_remove in soup.get_text():
+        soup = BeautifulSoup(str(soup).replace(text_to_remove, ""), "html.parser")
+        log_content_debug(product_code, "Removed inline text-align styles.")
+
+    disallowed_attrs = ["area-hidden", "data-linkdata", "data-linktype", "onclick", "style", "class"]
+    for attr in disallowed_attrs:
+        for tag in soup.find_all(attrs={attr: True}):
+            del tag[attr]
+
+    for anchor in soup.find_all("a", attrs={"data-linkdata": True}):
+        img = anchor.find("img")
+        if not img:
+            continue
+        src = img.get("src", "")
+        data_src = img.get("data-src", "")
+        if not src:
+            src = data_src
+            img["src"] = src
+        if "data-src" in img.attrs:
+            del img["data-src"]
+
+    for img in soup.find_all("img"):
+        src = img.get("src", "")
+        if any(src.startswith(prefix) for prefix in _BLOCKED_IMAGE_PREFIXES):
+            img.decompose()
+
+    strip_blob_media(soup, product_code)
+    cleanup_dom_structure(soup, product_code)
+
+    remaining_img_count = len(soup.find_all('img'))
+    log_content_debug(product_code, f"Images after cleanup: {remaining_img_count}")
+
+    soup = insert_and_remove_images(soup)
+
+    for img_tag in soup.find_all("img"):
+        img_tag["style"] = "display: block; margin-left: auto; margin-right: auto; margin-bottom: 10px;"
+
+    for h1 in soup.find_all("h1"):
+        h1["style"] = "text-align: center; font-size: 30px; margin-bottom: 20px;"
+
+    text_elements = ["p", "div", "span", "li", "a"]
+    for tag_name in text_elements:
+        for node in soup.find_all(tag_name):
+            existing_style = node.get("style", "")
+            new_style = f"{existing_style}; text-align: center; font-size: 18px; margin-bottom: 30px;"
+            node["style"] = new_style.strip()
+
+    minimal_html = build_minimal_html(soup, product_code)
+    cleaned_html = minimal_html or str(soup).strip()
+
+    meaningful_imgs = [
+        img for img in soup.find_all("img")
+        if (img.get("src") or "").strip() and (img.get("src").strip() not in BRANDING_IMAGE_URLS)
+    ]
+    has_text = bool(soup.get_text(strip=True))
+    final_html = cleaned_html
+    final_label = "cleaned"
+
+    if not has_text and not meaningful_imgs:
+        log_content_debug(product_code, "Content empty after cleanup; applying fallback gallery extraction.")
+        fallback = build_image_gallery(raw_content, product_code)
+        if fallback is None:
+            log_content_debug(product_code, "Fallback gallery extraction failed; returning None.")
+            save_debug_html(product_code, raw_content, "fallback_failed")
+            return None
+        final_html = fallback
+        final_label = "fallback_gallery"
+        log_content_debug(product_code, "Fallback gallery extraction succeeded.")
+
+    if WRAP_CONTENT_HTML:
+        final_html = wrap_html_document(final_html)
+
+    dump_content_html(product_code, final_html, final_label)
+    log_content_debug(product_code, "Returning cleaned HTML content.")
+    return pd.DataFrame({"Content": [final_html]})
+
+
+def insert_and_remove_images(soup):
+    img_srcs_to_insert = [
+        "https://axh2eqadoldy.compat.objectstorage.ap-chuncheon-1.oraclecloud.com/bucket-20230610-0005/upload/top.png",
+        "https://axh2eqadoldy.compat.objectstorage.ap-chuncheon-1.oraclecloud.com/bucket-20230610-0005/upload/bottom.png",
+        "https://coudae.s3.ap-northeast-2.amazonaws.com/A00412936/cloud/7290.png",
+    ]
+
+    img_tag_top = soup.new_tag(
+        "img", src=img_srcs_to_insert[0], style="display: block; margin-left: auto; margin-right: auto;"
+    )
+    img_tag_middle = soup.new_tag(
+        "img", src=img_srcs_to_insert[2], style="display: block; margin-left: auto; margin-right: auto;"
+    )
+    img_tag_bottom = soup.new_tag(
+        "img", src=img_srcs_to_insert[1], style="display: block; margin-left: auto; margin-right: auto;"
+    )
+
+    try:
+        first_tag = next(soup.children)
+        last_tag = next(reversed(soup.contents))
+    except StopIteration:
+        return soup
+
+    first_tag.insert_before(img_tag_top)
+    last_tag.insert_after(img_tag_bottom)
+
+    img_srcs_to_remove = ["", ""]
+    for img_src in img_srcs_to_remove:
+        for img in soup.find_all("img", attrs={"src": img_src}):
+            img.decompose()
+
+    return soup
+
+
+def build_image_gallery(raw_html, product_code="UNKNOWN"):
+    if not raw_html:
+        log_content_debug(product_code, "build_image_gallery received empty raw_html.")
+        return None
+
+    soup = BeautifulSoup(raw_html, 'html.parser')
 
     for img in soup.find_all('img', attrs={'data-src': True}):
         img['src'] = img['data-src']
         del img['data-src']
 
-    target_url = "https://rapid-up.s3.ap-northeast-2.amazonaws.com/dev/gray-line.png"
-    new_url = "https://axh2eqadoldy.compat.objectstorage.ap-chuncheon-1.oraclecloud.com/bucket-20230610-0005/upload/gray-line.png"
-    for img in soup.find_all('img', src=target_url):
-        img['src'] = new_url
+    filtered = BeautifulSoup('', 'html.parser')
+    container = filtered.new_tag('div')
+    filtered.append(container)
 
-    text_to_remove = '* {text-align: center;}  #mycontents11 img{max-width: 100%;}'
-    if text_to_remove in soup.get_text():
-        soup = BeautifulSoup(str(soup).replace(text_to_remove, ''), 'html.parser')
-
-    disallowed_attrs = ['area-hidden', 'data-linkdata', 'data-linktype', 'onclick', 'style', 'class']
-    for attr in disallowed_attrs:
-        for tag in soup.find_all(attrs={attr: True}):
-            del tag[attr]
-
-    for a in soup.find_all('a', attrs={'data-linkdata': True}):
-        img = a.find('img')
-        if img:
-            src = img.get('src', '')
-            data_src = img.get('data-src', '')
-            if not src:
-                src = data_src
-                img['src'] = src
-                if 'data-src' in img.attrs:
-                    del img['data-src']
-
+    seen = set()
     for img in soup.find_all('img'):
-        src = img.get('src', '')
-        if src.startswith(('https://rapid-up.s3.ap-northeast-2.amazonaws.com', 'https://cdn.heyseller.kr', 'https://ai.esmplus.com/')):
-            img.decompose()
+        src = (img.get('src') or '').strip()
+        if not src:
+            continue
+        src = _GRAY_LINE_REPLACEMENTS.get(src, src)
+        if any(src.startswith(prefix) for prefix in _BLOCKED_IMAGE_PREFIXES):
+            continue
+        if src in BRANDING_IMAGE_URLS:
+            continue
+        if src in seen:
+            continue
+        seen.add(src)
+        clean_img = filtered.new_tag('img', src=src)
+        clean_img['style'] = 'display:block;margin:0 auto 10px auto;'
+        container.append(clean_img)
 
-    print(f"Number of images after all removals: {len(soup.find_all('img'))}")
+    if not container.find_all('img'):
+        log_content_debug(product_code, "Fallback gallery extraction produced no images.")
+        return None
 
-    soup = insert_and_remove_images(soup)
-
-    for img_tag in soup.find_all('img'):
-        img_tag['style'] = 'display: block; margin-left: auto; margin-right: auto; margin-bottom: 10px;'
-
-    for h1 in soup.find_all('h1'):
-        h1['style'] = 'text-align: center; font-size: 30px; margin-bottom: 20px;'
-
-    text_elements = ['p', 'div', 'span', 'li', 'a']
-    for tag_name in text_elements:
-        for element in soup.find_all(tag_name):
-            existing_style = element.get('style', '')
-            new_style = f"{existing_style}; text-align: center; font-size: 18px; margin-bottom: 30px;"
-            element['style'] = new_style.strip()
-
-    return pd.DataFrame({'Content': [str(soup)]})
-
-
-def insert_and_remove_images(soup):
-    img_srcs_to_insert = ['https://axh2eqadoldy.compat.objectstorage.ap-chuncheon-1.oraclecloud.com/bucket-20230610-0005/upload/top.png',
-                          'https://axh2eqadoldy.compat.objectstorage.ap-chuncheon-1.oraclecloud.com/bucket-20230610-0005/upload/bottom.png',
-                          'https://coudae.s3.ap-northeast-2.amazonaws.com/A00412936/cloud/7290.png']
-
-    img_tag_top = soup.new_tag('img', src=img_srcs_to_insert[0],
-                               style="display: block; margin-left: auto; margin-right: auto;")
-    img_tag_middle = soup.new_tag('img', src=img_srcs_to_insert[2],
-                                  style="display: block; margin-left: auto; margin-right: auto;")
-    img_tag_bottom = soup.new_tag('img', src=img_srcs_to_insert[1],
-                                  style="display: block; margin-left: auto; margin-right: auto;")
-
-    first_tag = next(soup.children)
-    last_tag = next(reversed(soup.contents))
-
-    first_tag.insert_before(img_tag_top)
-    last_tag.insert_after(img_tag_bottom)
-
-    img_srcs_to_remove = ['', '']
-
-    for img_src in img_srcs_to_remove:
-        img_to_remove = soup.find_all('img', attrs={'src': img_src})
-        for img in img_to_remove:
-            img.decompose()
-
-    return soup
+    log_content_debug(product_code, "Fallback gallery extraction produced image-only content.")
+    return str(filtered)
 
 
 def return_shipping_fee(total_price):
@@ -1318,6 +1913,26 @@ def get_product_data(page, product, i, num_products):
     options = option_crawl(product_page)
     print("Options:", options)
 
+    if not has_numeric_chars(price):
+        state_price = price_from_preloaded_state(product_page)
+        option_price = price_from_option_data(options)
+        resolved_price = None
+        source = None
+        if state_price:
+            resolved_price = state_price
+            source = "preloaded_state"
+        elif option_price:
+            resolved_price = option_price
+            source = "option_list"
+
+        if resolved_price:
+            price = f"{resolved_price:,}"
+            print(f"Price fallback via {source}: {price}")
+        else:
+            print(f"가격 정보를 찾지 못해 상품을 건너뜁니다: {product_url}")
+            product_page.close()
+            return None
+
     common_urls, different_urls = image_crawl(product_page)
     print(f"common_urls: {common_urls}")
 
@@ -1358,7 +1973,10 @@ def get_product_data(page, product, i, num_products):
     price_int = to_int(price)
     total_price = price_int + shipping_fee_int
 
-    if isinstance(content, str):
+    if content is None:
+        log_content_debug(product_code, "content_crawl returned None; storing empty placeholder.")
+        content_df = pd.DataFrame({'Content': [""]})
+    elif isinstance(content, str):
         content_df = pd.DataFrame({'Content': [content]})
     else:
         content_df = content
@@ -1571,7 +2189,19 @@ with sync_playwright() as p:
     if browser_name == "chromium" and STEALTH_HELPER:
         STEALTH_HELPER.apply_stealth_sync(context)
 
-    df = pd.DataFrame(columns=['Product', 'Price', 'Product_URL'])
+    df_columns = [
+        'Naver_Category_Number',
+        'Product',
+        'Price',
+        'Shipping_Fee',
+        'Total_Price',
+        'Options',
+        'Main_Image',
+        'Other_Images',
+        'Content',
+        'Product_URL',
+    ]
+    df = pd.DataFrame(columns=df_columns)
     output_folder = SCRIPT_DIR / 'output'
     read_excel_path = output_folder / 'ExcelSaveTemplate_230109.xlsx'
     seen_urls = set()

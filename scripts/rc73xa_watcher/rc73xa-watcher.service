@@ -1,0 +1,21 @@
+## Template systemd unit for RC73XA watcher
+## Copy to: /etc/systemd/system/rc73xa-watcher.service
+## Adjust User and paths as needed.
+
+[Unit]
+Description=RC73XA Coupang Return Watcher
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/opt/rc73xa_watcher
+EnvironmentFile=/etc/rc73xa-watcher.env
+ExecStart=/opt/rc73xa_watcher/.venv/bin/python /opt/rc73xa_watcher/rc73xa_watcher.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
+
