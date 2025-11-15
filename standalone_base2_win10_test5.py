@@ -20,13 +20,13 @@ from urllib.parse import urlsplit, urlunsplit, parse_qsl, urlencode
 
 
 # 페이지당 최대 크롤링 상품 수 (0이면 제한 없음)
-DEFAULT_MAX_PRODUCTS_PER_PAGE = 5
+DEFAULT_MAX_PRODUCTS_PER_PAGE = 3
 MAX_PRODUCTS_PER_PAGE = int(
     os.getenv("MAX_PRODUCTS_PER_PAGE", str(DEFAULT_MAX_PRODUCTS_PER_PAGE)) or DEFAULT_MAX_PRODUCTS_PER_PAGE
 )
 
 # 전체 실행에서 최대 수집 상품 수 (0이면 제한 없음)
-DEFAULT_MAX_PRODUCTS_TOTAL = 5
+DEFAULT_MAX_PRODUCTS_TOTAL = 3
 MAX_PRODUCTS_TOTAL = int(
     os.getenv("MAX_PRODUCTS_TOTAL", str(DEFAULT_MAX_PRODUCTS_TOTAL)) or DEFAULT_MAX_PRODUCTS_TOTAL
 )
@@ -1527,67 +1527,73 @@ def build_minimal_html(soup, product_code):
     return result
 
 
+PRESERVE_NAVER_SE_VIDEO = os.getenv("PRESERVE_NAVER_SE_VIDEO", "1").lower() in {"1", "true", "yes"}
+
+
 def strip_blob_media(soup, product_code):
     removed = 0
     simplified_videos = 0
 
-    for component in list(soup.select(".se-component.se-video")):
-        playable_src = None
-        video_tags = component.find_all("video")
-        for video_tag in video_tags:
-            src_candidates = [video_tag.get("src"), video_tag.get("data-src")]
-            for candidate in src_candidates:
-                if candidate and not candidate.startswith("blob:"):
-                    playable_src = candidate
+    # 네이버 재업로드를 위해 se-video 블록을 보존할지 여부
+    if not PRESERVE_NAVER_SE_VIDEO:
+        # 기존 동작: playable src가 있으면 단순 video로 치환, 없으면 제거
+        for component in list(soup.select(".se-component.se-video")):
+            playable_src = None
+            video_tags = component.find_all("video")
+            for video_tag in video_tags:
+                src_candidates = [video_tag.get("src"), video_tag.get("data-src")]
+                for candidate in src_candidates:
+                    if candidate and not candidate.startswith("blob:"):
+                        playable_src = candidate
+                        break
+                if playable_src:
                     break
+
             if playable_src:
-                break
+                simple_video = soup.new_tag("video")
+                simple_video["src"] = playable_src
+                simple_video["controls"] = "controls"
+                simple_video["autoplay"] = "autoplay"
+                simple_video["muted"] = "muted"
+                simple_video["loop"] = "loop"
+                simple_video["style"] = "display:block;margin:0 auto 20px auto;max-width:100%;"
+                component.replace_with(simple_video)
+                simplified_videos += 1
+            else:
+                component.decompose()
+                removed += 1
 
-        if playable_src:
-            simple_video = soup.new_tag("video")
-            simple_video["src"] = playable_src
-            simple_video["controls"] = "controls"
-            simple_video["autoplay"] = "autoplay"
-            simple_video["muted"] = "muted"
-            simple_video["loop"] = "loop"
-            simple_video["style"] = "display:block;margin:0 auto 20px auto;max-width:100%;"
-            component.replace_with(simple_video)
-            simplified_videos += 1
-        else:
-            component.decompose()
+        blob_tags = []
+        for tag in soup.find_all(["video", "source", "iframe", "canvas"]):
+            attrs = [
+                tag.get("src", ""),
+                tag.get("data-src", ""),
+                tag.get("poster", ""),
+            ]
+            if any(attr and "blob:" in attr for attr in attrs):
+                blob_tags.append(tag)
+
+        for tag in blob_tags:
+            parent = tag.find_parent(class_="se-component se-video") or tag
+            parent.decompose()
             removed += 1
 
-    blob_tags = []
-    for tag in soup.find_all(["video", "source", "iframe", "canvas"]):
-        attrs = [
-            tag.get("src", ""),
-            tag.get("data-src", ""),
-            tag.get("poster", ""),
+        extra_selectors = [
+            ".prismplayer-area",
+            "[class*='pzp-']",
+            "[class*='pzp_']",
+            "[class*='pzp ']",
+            "[class~='pzp']",
+            "[class*='webplayer']",
+            "[class*='player-area']",
+            "[class*='pzp-pc']",
+            "[class*='pzp-ui']",
+            "[class*='pzp-upnext']",
         ]
-        if any(attr and "blob:" in attr for attr in attrs):
-            blob_tags.append(tag)
-
-    for tag in blob_tags:
-        parent = tag.find_parent(class_="se-component se-video") or tag
-        parent.decompose()
-        removed += 1
-
-    extra_selectors = [
-        ".prismplayer-area",
-        "[class*='pzp-']",
-        "[class*='pzp_']",
-        "[class*='pzp ']",
-        "[class~='pzp']",
-        "[class*='webplayer']",
-        "[class*='player-area']",
-        "[class*='pzp-pc']",
-        "[class*='pzp-ui']",
-        "[class*='pzp-upnext']",
-    ]
-    for selector in extra_selectors:
-        for node in soup.select(selector):
-            node.decompose()
-            removed += 1
+        for selector in extra_selectors:
+            for node in soup.select(selector):
+                node.decompose()
+                removed += 1
 
     video_text_keywords = (
         "광고 후 계속됩니다",
@@ -1617,7 +1623,12 @@ def strip_blob_media(soup, product_code):
             if container.name in {"html", "body"}:
                 continue
             parent_component = container.find_parent(class_="se-component se-video")
-            target = parent_component or container
+            # 네이버 재업로드 모드에서는 se-video 블록은 유지하고,
+            # 안내 텍스트만 제거한다.
+            if PRESERVE_NAVER_SE_VIDEO and parent_component is not None:
+                target = container
+            else:
+                target = parent_component or container
             try:
                 target.decompose()
                 removed_text += 1
@@ -1625,11 +1636,155 @@ def strip_blob_media(soup, product_code):
                 continue
     removed += removed_text
 
+    # �뷮/�ӵ�/���� �޴�(720p, 480p, 0.5x ��)��
+    # SmartEditor ���� HTML ���ڵ�� �ؽ�Ʈ�� ��Ÿ���� ����,
+    # role=\"menu\"/\"menuitem\" �� ���� �޴��� �������� �����.
+    menu_keywords = (
+        "720p",
+        "480p",
+        "270p",
+        "HD",
+        "0.5x",
+        "1.0x",
+        "1.5x",
+        "2.0x",
+        "help",
+        "license",
+    )
+    for ul in list(soup.find_all("ul")):
+        role = (ul.get("role") or "").lower()
+        if "menu" not in role and "memu" not in role:
+            continue
+        text = ul.get_text(" ", strip=True)
+        if any(keyword in text for keyword in menu_keywords):
+            ul.decompose()
+            removed += 1
+
+    # ���ο� �÷ο��� ������ ul�� �߰��� ����(role ���� �ʴ� ���)
+    extra_menu_keywords = (
+        "���� �Է�",
+        "���� ũ��",
+        "����",
+        "���̼���",
+    )
+    for ul in list(soup.find_all("ul")):
+        text = ul.get_text(" ", strip=True)
+        if any(keyword in text for keyword in extra_menu_keywords):
+            ul.decompose()
+            removed += 1
+
     if removed or simplified_videos:
         log_content_debug(
             product_code,
             f"Removed {removed} blob media blocks, simplified {simplified_videos} playable videos.",
         )
+
+
+def strip_player_ui_html(html_text: str) -> str:
+    """
+    비디오 플레이어 UI(해상도/배속 메뉴, 글자 크기, 배경색, 라이선스 등)에서 온
+    텍스트/HTML 조각을 제거한다.
+    """
+    patterns = [
+        # 컨텍스트/해상도/배속 메뉴 UL
+        r'<ul[^>]*role="menu"[\s\S]*?</ul>',
+        r'<ul[^>]*>[\s\S]*?(?:720p|480p|270p|0\.5x|1\.0x|1\.5x|2\.0x)[\s\S]*?</ul>',
+        r'<ul[^>]*>[\s\S]*?(?:글자\s*크기|배경색|라이선스)[\s\S]*?</ul>',
+        # 아이콘 SVG
+        r'<svg[^>]*class="pzp-ui-icon__svg"[\s\S]*?</svg>',
+        # 00:26 / 00:26 HD 1.0x (기본) 같은 한 줄 전체 (시간 값이 달라도 매치)
+        r'\d{2}:\d{2}\s*/\s*\d{2}:\d{2}[\s\S]*?HD[\s\S]*?1\.0x\s*\([^)]*\)',
+    ]
+
+    # 정규식 패턴들 제거
+    for pat in patterns:
+        try:
+            html_text = re.sub(pat, "", html_text, flags=re.IGNORECASE)
+        except re.error:
+            continue
+
+    # 남아 있을 수 있는 시간/해상도/배속/상태 텍스트를 한 번 더 제거
+    for token in [
+        "0초",
+        "00:00",
+        "0:00",
+        "720p",
+        "480p",
+        "270p",
+        "0.5x",
+        "1.0x",
+        "1.0x (기본)",
+        "1.5x",
+        "2.0x",
+        "HD",
+        "글자 크기",
+        "배경색",
+        "라이선스",
+        "사용 안함",
+        "음소거 상태입니다",
+    ]:
+        html_text = html_text.replace(token, "")
+
+    return html_text
+
+
+
+
+
+
+
+def extract_se_video_blocks(raw_html, product_code):
+    """
+    Preserve 원본 SmartEditor(se-video) 블록을 별도로 추출한다.
+    - PRESERVE_NAVER_SE_VIDEO=1 인 경우에만 동작.
+    - strip_blob_media 를 재사용해 안내 문구만 제거하고 구조/속성은 그대로 둔다.
+    - se-video와 짝을 이루는 __se_module_data 스크립트도 함께 포함한다.
+    """
+    if not (PRESERVE_NAVER_SE_VIDEO and raw_html):
+        return []
+    try:
+        soup = BeautifulSoup(raw_html, "html.parser")
+    except Exception:
+        return []
+
+    fragments = []
+    for component in soup.select(".se-component.se-video"):
+        # se-video 컴포넌트 HTML
+        parts_html = str(component)
+
+        # 바로 뒤에 붙은 __se_module_data 스크립트가 있으면 같이 포함
+        try:
+            from bs4 import Tag  # 재-import 안전
+        except Exception:
+            Tag = None
+
+        if Tag is not None:
+            for sibling in component.next_siblings:
+                if not isinstance(sibling, Tag):
+                    continue
+                sibling_classes = sibling.get("class") or []
+                # 다음 se-component를 만나면 중단
+                if any("se-component" in cls for cls in sibling_classes if isinstance(cls, str)):
+                    break
+                # 비디오 모듈 데이터로 보이는 스크립트만 추가
+                if (
+                    sibling.name == "script"
+                    and "__se_module_data" in sibling_classes
+                ):
+                    parts_html += str(sibling)
+                    break
+
+        try:
+            component_soup = BeautifulSoup(parts_html, "html.parser")
+        except Exception:
+            continue
+        try:
+            # 안내 텍스트만 제거하도록 strip_blob_media 재사용
+            strip_blob_media(component_soup, product_code)
+        except Exception:
+            pass
+        fragments.append(str(component_soup))
+    return fragments
 
 
 def content_crawl(page, product_code, element_selector):
@@ -1646,11 +1801,14 @@ def content_crawl(page, product_code, element_selector):
         save_debug_snapshot(page, f"content_missing_{product_code}")
         return None
 
+    extra_se_video_fragments = []
+
     raw_content = element.inner_html()
     if not (raw_content or "").strip():
         log_content_debug(product_code, "Element inner_html is empty; capturing page snapshot.")
         save_debug_snapshot(page, f"content_empty_{product_code}")
         return None
+    extra_se_video_fragments = extract_se_video_blocks(raw_content, product_code)
     soup = BeautifulSoup(raw_content, 'html.parser')
 
     text_snapshot = soup.get_text(strip=True)
@@ -1729,8 +1887,9 @@ def content_crawl(page, product_code, element_selector):
             new_style = f"{existing_style}; text-align: center; font-size: 18px; margin-bottom: 30px;"
             node["style"] = new_style.strip()
 
-    minimal_html = build_minimal_html(soup, product_code)
-    cleaned_html = minimal_html or str(soup).strip()
+    # build_minimal_html는 이미지/텍스트만 추려내면서 테이블 기반 레이아웃이 깨질 수 있어
+    # 원본 구조를 최대한 유지하도록 전체 soup HTML을 그대로 사용한다.
+    cleaned_html = str(soup).strip()
 
     meaningful_imgs = [
         img for img in soup.find_all("img")
@@ -1750,6 +1909,14 @@ def content_crawl(page, product_code, element_selector):
         final_html = fallback
         final_label = "fallback_gallery"
         log_content_debug(product_code, "Fallback gallery extraction succeeded.")
+
+    # SmartEditor(se-video) 원본 블록을 추가로 붙여서
+    # 네이버 재업로드 시 플레이어가 최대한 재사용되도록 시도한다.
+    if PRESERVE_NAVER_SE_VIDEO and extra_se_video_fragments:
+        final_html = final_html + "".join(extra_se_video_fragments)
+        final_label = f"{final_label}+se_video"
+
+    final_html = strip_player_ui_html(final_html)
 
     if WRAP_CONTENT_HTML:
         final_html = wrap_html_document(final_html)
